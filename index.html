@@ -32,6 +32,13 @@ button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in s
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #b{pointer-events:none}#pt{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:rgba(229,56,75,.55);border:3px solid #e5384b;display:none;pointer-events:none;box-shadow:0 0 14px #e5384b}
 #sym{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:none;gap:6px;z-index:4;flex-wrap:wrap;justify-content:center;max-width:94%;background:var(--panel);padding:6px;border-radius:12px;border:1px solid var(--line)}
+#gp{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:12px}
+.gc{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;max-width:96vw;max-height:96vh;overflow:auto;text-align:center}
+.gh{display:flex;gap:8px;justify-content:center;margin:8px 0}
+#gst{margin:8px 0;font-weight:700;font-size:18px}
+#gbd{display:grid;gap:6px;justify-content:center;background:var(--line);padding:6px;border-radius:12px}
+#gbd button{width:var(--cs);height:var(--cs);padding:0;font-size:calc(var(--cs)*.6);line-height:1;border-radius:10px;min-height:0;background:var(--panel)}
+#gbd.c4 button{border-radius:50%}
 #pgl{font-size:14px;min-width:70px;text-align:center}
 .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a93a3;font-size:22px;pointer-events:none;text-align:center;padding:20px}
 #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}
@@ -76,11 +83,17 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     <button id="photo">Photo</button>
     <button id="bg">Paper: Blank</button>
     <button id="save">Save picture</button>
+    <button id="games">Games</button>
     <button id="mic" aria-pressed="false">Mic off</button>
     <button id="room">Room</button>
   </div>
   <div id="who" role="status">Not connected</div>
 </div>
+<div id="gp" role="dialog" aria-label="Games"><div class="gc">
+  <div class="gh"><button id="g1">Tic tac toe</button><button id="g2">Connect 4</button></div>
+  <p id="gst"></p><div id="gbd"></div>
+  <div class="gh"><button id="gnew">New game</button><button id="gx">Close</button></div>
+</div></div>
 <input type="file" id="file" accept="image/*" hidden>
 <audio id="aud" autoplay></audio>
 <div class="stage" id="stage">
@@ -150,6 +163,40 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   function sendPtr(e){var t=Date.now();if(t-lastP<40)return;lastP=t;var q=pos(e);send("ptr",{x:q[0]/W,y:q[1]/H})}
   function ans(call){call.answer();call.on("stream",function(st){aud.srcObject=st;var pr=aud.play();if(pr&&pr.catch)pr.catch(function(){})})}
   function callAll(){conns.forEach(function(c){if(mic&&peer)calls.push(peer.call(c.peer,mic))})}
+  var game=null,gp=document.getElementById("gp");
+  function myMark(){return game.opener===me?0:1}
+  function newGame(k){game={k:k,b:new Array(k==="ttt"?9:42).fill(-1),turn:0,win:"",opener:me};send("game",game);showGame()}
+  function gcheck(){
+    var b=game.b,t=game.k==="ttt",w=t?3:7,h=t?3:6,L=t?3:4,dirs=[[1,0],[0,1],[1,1],[1,-1]];
+    for(var y=0;y<h;y++)for(var x=0;x<w;x++){var v=b[y*w+x];if(v<0)continue;
+      for(var d=0;d<4;d++){var k=1;while(k<L){var xx=x+dirs[d][0]*k,yy=y+dirs[d][1]*k;if(xx<0||xx>=w||yy<0||yy>=h||b[yy*w+xx]!==v)break;k++}if(k===L)return v}}
+    return b.indexOf(-1)<0?"draw":"";
+  }
+  function play(i){
+    if(!game||game.win!==""||(conns.length&&game.turn!==myMark()))return;
+    var b=game.b,m=game.turn;
+    if(game.k==="ttt"){if(b[i]>=0)return;b[i]=m}
+    else{var c=i%7,r;for(r=5;r>=0;r--)if(b[r*7+c]<0)break;if(r<0)return;b[r*7+c]=m}
+    game.win=gcheck();game.turn=1-m;send("game",game);showGame();
+  }
+  function showGame(){
+    closeText();var g=game,t=g.k==="ttt",cols=t?3:7,names=t?["X","O"]:["Red","Yellow"],cs=t?["#2f6fed","#e5384b"]:["#e5384b","#f2b705"];
+    gp.style.display="flex";
+    var st=document.getElementById("gst"),bd=document.getElementById("gbd"),mm=myMark();
+    st.textContent=g.win==="draw"?"It's a draw!":g.win!==""?names[g.win]+" wins! 🎉":
+      "Turn: "+names[g.turn]+(conns.length?(g.turn===mm?" (you)":" (them)"):"")+(conns.length?" · you are "+names[mm]:"");
+    bd.className=t?"":"c4";bd.style.setProperty("--cs",t?"92px":"46px");bd.style.gridTemplateColumns="repeat("+cols+",var(--cs))";
+    bd.innerHTML="";
+    g.b.forEach(function(v,i){var b=document.createElement("button");
+      b.textContent=v<0?"":(t?names[v]:"●");b.style.color=v<0?"":cs[v];
+      b.setAttribute("aria-label","Square "+(i+1));b.onclick=function(){play(i)};bd.appendChild(b)});
+  }
+  function hideGame(){game=null;gp.style.display="none"}
+  document.getElementById("games").onclick=function(){if(game)showGame();else newGame("ttt")};
+  document.getElementById("g1").onclick=function(){newGame("ttt")};
+  document.getElementById("g2").onclick=function(){newGame("c4")};
+  document.getElementById("gnew").onclick=function(){newGame(game?game.k:"ttt")};
+  document.getElementById("gx").onclick=function(){hideGame();send("gameclose",{})};
   var ti=null,dirty=false;
   function saveBoard(){
     if(!code)return;
@@ -232,6 +279,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     }else if(t==="undo"){var k=find(d.id);if(k>=0){strokes.splice(k,1);redraw()}}
     else if(t==="clear"){strokes=strokes.filter(function(s){return s.g!==d.g});redraw()}
     else if(t==="ptr"){showPtr(d)}else if(t==="page"){goPage(d.n,true)}else if(t==="bg"){setBg(d.g,d.m,true)}else if(t==="img"){setImg(d.g,d.u,true)}
+    else if(t==="game"){if(d&&Array.isArray(d.b)&&((d.k==="ttt"&&d.b.length===9)||(d.k==="c4"&&d.b.length===42))){game=d;showGame()}}
+    else if(t==="gameclose"){hideGame()}
     else if(t==="sync"&&d&&Array.isArray(d.s)){
       mergeInfo(d.p);var ch=false;d.s.forEach(function(s){if(find(s.id)<0){strokes.push(s);ch=true}});
       if(ch){sortS();redraw()}
@@ -239,7 +288,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   }
   function addConn(c){
     c.on("open",function(){
-      conns.push(c);update();c.send({t:"sync",d:{s:strokes,p:pages.map(function(q){return {bg:q.bg,img:q.img}})}});c.send({t:"page",d:{n:pg}});if(mic)callAll();
+      conns.push(c);update();c.send({t:"sync",d:{s:strokes,p:pages.map(function(q){return {bg:q.bg,img:q.img}})}});c.send({t:"page",d:{n:pg}});if(mic)callAll();if(game)c.send({t:"game",d:game});
     });
     c.on("data",function(m){
       if(!m||typeof m.t!=="string")return;
