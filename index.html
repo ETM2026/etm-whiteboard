@@ -31,6 +31,7 @@ button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in s
 .paper.lines{background-image:linear-gradient(var(--grid) 1px,transparent 1px);background-size:100% calc(50*var(--u))}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #b{pointer-events:none}#pt{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:rgba(229,56,75,.55);border:3px solid #e5384b;display:none;pointer-events:none;box-shadow:0 0 14px #e5384b}
+#sym{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:none;gap:6px;z-index:4;background:var(--panel);padding:6px;border-radius:12px;border:1px solid var(--line)}
 #pgl{font-size:14px;min-width:70px;text-align:center}
 .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a93a3;font-size:22px;pointer-events:none;text-align:center;padding:20px}
 #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}
@@ -59,6 +60,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     <button id="pen" aria-pressed="true">Pen</button>
     <button id="eraser" aria-pressed="false">Eraser</button>
     <button id="line" aria-pressed="false">Line</button>
+    <button id="text" aria-pressed="false">Text</button>
     <button id="ptr" aria-pressed="false">Pointer</button>
   </div>
   <div class="grp" id="sizes" role="group" aria-label="Thickness"></div>
@@ -86,6 +88,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     <canvas id="b"></canvas>
     <canvas id="c"></canvas>
     <div id="pt"></div>
+    <div id="sym"></div>
     <div class="hint" id="hint">Draw here. The other person sees it live.</div>
   </div>
 </div>
@@ -112,7 +115,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     b.setAttribute("aria-label","Thickness "+(i+1));b.setAttribute("aria-pressed",i===1?"true":"false");
   });
   function mark(box,on){[].forEach.call(box.children,function(x){x.setAttribute("aria-pressed",x===on?"true":"false")})}
-  var TOOLS=["pen","eraser","line","ptr"];
+  var TOOLS=["pen","eraser","line","ptr","text"];
   function setTool(t){tool=t;TOOLS.forEach(function(k){document.getElementById(k).setAttribute("aria-pressed",k===t)})}
   TOOLS.forEach(function(k){document.getElementById(k).onclick=function(){setTool(k)}});
 
@@ -133,10 +136,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   }
   function paintBg(){drawBg(bx,bc.width/W,pages[pg])}
   function mkPage(i){while(pages.length<=i)pages.push({bg:0,img:""})}
-  function label(){document.getElementById("pgl").textContent="Page "+(pg+1)+"/"+pages.length;
+  function label(){dirty=true;document.getElementById("pgl").textContent="Page "+(pg+1)+"/"+pages.length;
     document.getElementById("bg").textContent="Paper: "+BG[pages[pg].bg];
     document.getElementById("photo").textContent=pages[pg].img?"Remove photo":"Photo"}
-  function goPage(i,remote){mkPage(i);pg=i;label();paintBg();redraw();if(!remote)send("page",{n:i})}
+  function goPage(i,remote){closeText();mkPage(i);pg=i;label();paintBg();redraw();if(!remote)send("page",{n:i})}
   function setBg(g,m,remote){mkPage(g);pages[g].bg=m;if(g===pg){label();paintBg()}if(!remote)send("bg",{g:g,m:m})}
   function setImg(g,u,remote){mkPage(g);var q=pages[g];q.img=u;
     if(u){q.el=new Image();q.el.onload=function(){if(g===pg)paintBg()};q.el.src=u}else q.el=null;
@@ -147,6 +150,44 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   function sendPtr(e){var t=Date.now();if(t-lastP<40)return;lastP=t;var q=pos(e);send("ptr",{x:q[0]/W,y:q[1]/H})}
   function ans(call){call.answer();call.on("stream",function(st){aud.srcObject=st;var pr=aud.play();if(pr&&pr.catch)pr.catch(function(){})})}
   function callAll(){conns.forEach(function(c){if(mic&&peer)calls.push(peer.call(c.peer,mic))})}
+  var ti=null,dirty=false;
+  function saveBoard(){
+    if(!code)return;
+    var info=pages.map(function(q){return {bg:q.bg,img:q.img}}),k="etmBoard:"+code;
+    try{localStorage.setItem(k,JSON.stringify({s:strokes,p:info,pg:pg}))}
+    catch(e){try{localStorage.setItem(k,JSON.stringify({s:strokes,p:info.map(function(q){return {bg:q.bg,img:""}}),pg:pg}))}catch(e2){}}
+  }
+  function loadBoard(){
+    try{var d=JSON.parse(localStorage.getItem("etmBoard:"+code)||"null");
+      if(d&&Array.isArray(d.s)){strokes=d.s;mergeInfo(d.p);pg=Math.min(d.pg||0,pages.length-1);label();paintBg();redraw()}
+    }catch(e){}
+  }
+  setInterval(function(){if(dirty){dirty=false;saveBoard()}},2000);
+  window.addEventListener("pagehide",saveBoard);
+  function openText(e){
+    closeText();
+    var q=pos(e),el=document.createElement("input"),fs=size*5+17;
+    el.type="text";el.maxLength=80;el.setAttribute("aria-label","Type text");
+    el.style.cssText="position:absolute;z-index:3;left:"+q[0]*scale+"px;top:"+q[1]*scale+"px;font:"+fs*scale+"px sans-serif;color:"+color+";background:rgba(255,255,255,.85);border:2px dashed #2f6fed;padding:0 4px;min-width:140px;outline:none;box-sizing:content-box";
+    paper.appendChild(el);ti={el:el,q:q,fs:fs,c:color};
+    el.addEventListener("keydown",function(k){if(k.key==="Enter")closeText();else if(k.key==="Escape")closeText(true)});
+    el.addEventListener("blur",function(){setTimeout(function(){
+      if(ti&&ti.el===el&&!document.getElementById("sym").contains(document.activeElement))closeText()},150)});
+    document.getElementById("sym").style.display="flex";el.focus();
+  }
+  function closeText(cancel){
+    if(!ti)return;var t=ti;ti=null;
+    document.getElementById("sym").style.display="none";
+    var v=t.el.value.trim();if(t.el.parentNode)t.el.parentNode.removeChild(t.el);
+    if(cancel||!v)return;
+    var st={id:me+"-"+(n++),g:pg,c:t.c,w:t.fs,t:Date.now(),tx:v,p:[t.q]};
+    strokes.push(st);redo=[];send("stroke",st);redraw();
+  }
+  ["×","÷","√","²","π","≤","≥","½","°"].forEach(function(sy){
+    var b=mk(document.getElementById("sym"),sy,function(){
+      if(!ti)return;var el=ti.el;el.setRangeText(sy,el.selectionStart,el.selectionEnd,"end");el.focus()});
+    b.onpointerdown=b.onmousedown=function(e){e.preventDefault()};
+  });
   function fit(){
     var aw=stage.clientWidth-20,ah=stage.clientHeight-20,d=window.devicePixelRatio||1;
     scale=Math.max(0.1,Math.min(aw/W,ah/H));
@@ -160,13 +201,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     ctx.globalCompositeOperation=s.e?"destination-out":"source-over";
     ctx.strokeStyle=s.c;ctx.fillStyle=s.c;ctx.lineWidth=s.w;ctx.lineCap="round";ctx.lineJoin="round";
     var p=s.p;if(!p.length){ctx.restore();return}
+    if(s.tx){ctx.font=s.w+"px 'Trebuchet MS',sans-serif";ctx.textBaseline="top";ctx.textAlign="left";ctx.fillText(s.tx,p[0][0],p[0][1]);ctx.restore();return}
     if(p.length===1){ctx.beginPath();ctx.arc(p[0][0],p[0][1],s.w/2,0,7);ctx.fill()}
     else{ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);
       for(var i=1;i<p.length-1;i++){var mx=(p[i][0]+p[i+1][0])/2,my=(p[i][1]+p[i+1][1])/2;ctx.quadraticCurveTo(p[i][0],p[i][1],mx,my)}
       var l=p[p.length-1];ctx.lineTo(l[0],l[1]);ctx.stroke()}
     ctx.restore();
   }
-  function redraw(){
+  function redraw(){dirty=true;
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.restore();
     var vs=strokes.filter(function(s){return s.g===pg});vs.forEach(drawStroke);
     document.getElementById("hint").style.display=vs.length?"none":"flex";
@@ -232,6 +274,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   function join(raw){
     code=(raw||"").toLowerCase().replace(/[^a-z0-9]/g,"");if(!code)return;
     try{localStorage.setItem("etmRoom",code)}catch(e){}document.getElementById("gate").style.display="none";
+    strokes=[];redo=[];pages=[{bg:0,img:""}];pg=0;loadBoard();
     if(typeof Peer==="undefined"){status("Could not load connection library");return}
     start();
   }
@@ -260,7 +303,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   var pend=[],timer=null;
   function flush(){timer=null;if(cur&&pend.length&&tool!=="line"){send("seg",{g:cur.g,id:cur.id,c:cur.c,w:cur.w,e:cur.e,t:cur.t,p:pend});pend=[]}}
   cv.addEventListener("pointerdown",function(e){
-    if(tool==="ptr"){sendPtr(e);return}cv.setPointerCapture(e.pointerId);
+    if(tool==="ptr"){sendPtr(e);return}if(tool==="text")return;cv.setPointerCapture(e.pointerId);
     cur={id:me+"-"+(n++),c:color,w:tool==="eraser"?size*3:size,e:tool==="eraser",t:Date.now(),g:pg,p:[pos(e)]};
     strokes.push(cur);redo=[];pend=[cur.p[0]];redraw();e.preventDefault();
     if(!timer)timer=setTimeout(flush,50);
@@ -273,7 +316,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     redraw();if(!timer)timer=setTimeout(flush,50);
   });
   function end(){if(!cur)return;clearTimeout(timer);flush();send("stroke",cur);cur=null}
-  cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+  cv.addEventListener("pointerup",function(e){if(tool==="text")openText(e)});cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
 
   document.getElementById("undo").onclick=function(){
     for(var i=strokes.length-1;i>=0;i--)if(strokes[i].g===pg&&strokes[i].id.indexOf(me+"-")===0){
