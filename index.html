@@ -116,7 +116,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
  <div id="mt" style="display:none"><div id="tqq" style="font-size:14px">What does this mean?</div><div id="tsym" style="font-size:36px;font-weight:700;margin:10px 0"></div>
   <div id="topts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="tmsg" style="min-height:1.4em;margin-top:8px"></div>
   <div style="font-size:13px;opacity:.7;margin-top:6px">🎹 Using a piano? Press C, D, E or F to pick that answer.</div></div>
- <div id="ms" style="display:none"><div id="sdisp" style="font-size:24px;font-weight:700;color:var(--accent);margin:14px 0;min-height:2.6em">Ready to spin!</div><button id="sspin">🔮 Spin challenge</button></div>
+ <div id="ms" style="display:none"><div id="sdisp" style="font-size:24px;font-weight:700;color:var(--accent);margin:14px 0;min-height:2.6em">Ready to spin!</div><button id="sspin">🔮 Spin challenge</button>
+  <div id="sprog" style="font-size:20px;letter-spacing:.15em;margin:10px 0;word-break:break-all"></div>
+  <div id="sres" style="min-height:1.4em;font-weight:600"></div>
+  <div class="gh"><button id="shint">Hint</button><button id="sask" style="display:none">Ask for a star ⭐</button></div>
+  <div style="font-size:13px;opacity:.7">🎹 Spin, then play the scale on your piano. I'll check every note.</div></div>
  <div class="gh"><button id="mclose">Close</button></div>
 </div></div>
 <div id="wp"><div class="gc"><h1 style="margin:0 0 12px;font-size:22px">Who's here?</h1><div id="wb"></div></div></div>
@@ -375,7 +379,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     else if(t==="mnote"&&d&&mrace&&NY[d.c]&&NY[d.c][d.n+d.o]){
       mclef=d.c;mnote=d.n;moct=d.o;document.getElementById("mmsg").textContent=d.pt?"Point to "+(other||"them")+"!":"";
       if(d.pt){rs.them++;raceCheck()}drawStaff();upd()}
-    else if(t==="mscale"&&d&&typeof d.t==="string"){showMusic("s");document.getElementById("sdisp").textContent=d.t.slice(0,80)}
+    else if(t==="mscale"&&d&&SC[d.i]){showMusic("s");setScale(d.i)}
+    else if(t==="mscaledone"&&d&&typeof d.t==="string"){
+      if(pl&&pl.p)toast((other||"They")+" played "+d.t.slice(0,60)+" perfectly! 🎉","Give ⭐",function(){award(other)});
+      else $("sres").textContent=(other||"They")+" played it perfectly! 🎉"}
     else if(t==="starask"&&d&&pl&&pl.p&&typeof d.n==="string"){var nm=d.n.slice(0,12);toast(nm+" is asking for a star ⭐","Give ⭐",function(){award(nm)})}
     else if(t==="scorereset"){sc.you=sc.them=sc.draws=0;saveScore();renderScore()}
     else if(t==="hello"&&d&&typeof d.n==="string"){other=d.n.slice(0,12);renderScore();if(pl&&pl.p&&S[other]!==undefined)send("star",{to:other,n:S[other]})}
@@ -636,6 +643,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     if((m.data[0]&240)===144&&m.data[2]>0){
       var l=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][m.data[1]%12],oc=Math.floor(m.data[1]/12)-1;
       $("mmidi").textContent="🎹 You played "+l+oc;
+      if(mtab==="s"){scaleNote(m.data[1]);return}
       if(l.length===1){if(mtab==="t")tpick(l);else mguess(l)}else $(mtab==="t"?"tmsg":"mmsg").textContent="That's a black key – try a white one"}
   }
   function bindMidi(m){var c=0;m.inputs.forEach(function(i){i.onmidimessage=midiMsg;c++});
@@ -690,11 +698,58 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     var i="CDEF".indexOf(l);if(i<0){$("tmsg").textContent="Press C, D, E or F to answer";return}
     tans(tcur[i]);
   }
-  var SC=["C major scale (hands together, 1 octave)","G major scale (right hand, 1 octave)","G major scale (left hand, 1 octave)","D major scale (right hand, 1 octave)","C major contrary motion scale","C major arpeggio (right hand)","G major arpeggio (left hand)"];
+  var SU=[0,2,4,5,7,9,11,12],SD=[11,9,7,5,4,2,0],SM=SU.concat(SD),AR=[0,4,7,12,7,4,0],
+    NN=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"],scl=-1,sdone=0,scur=[],sbase=null;
+  function single(a){return a.map(function(o){return [o]})}
+  var SC=[
+    {t:"C major scale (hands together, 1 octave)",k:0,s:SM.map(function(o){return [o-12,o]})},
+    {t:"G major scale (right hand, 1 octave)",k:7,s:single(SM)},
+    {t:"G major scale (left hand, 1 octave)",k:7,s:single(SM)},
+    {t:"D major scale (right hand, 1 octave)",k:2,s:single(SM)},
+    {t:"C major contrary motion scale",k:0,s:SM.map(function(o){return o?[o,-o]:[0]})},
+    {t:"C major arpeggio (right hand)",k:0,s:single(AR)},
+    {t:"G major arpeggio (left hand)",k:7,s:single(AR)}
+  ];
+  function nm(m){return NN[m%12]+(Math.floor(m/12)-1)}
+  function sreset(){sdone=0;scur=[];sbase=null}
+  function sprogRender(){$("sprog").textContent=scl<0?"":"●".repeat(sdone)+"○".repeat(SC[scl].s.length-sdone)}
+  function setScale(i){
+    scl=i;sreset();$("sdisp").textContent=SC[i].t;$("sask").style.display="none";
+    $("sres").textContent="🎹 Play it now – start on "+NN[SC[i].k]+". I'm listening!";sprogRender();
+  }
+  function sfail(msg){$("sres").textContent="❌ "+msg+". Start again!";sreset();sprogRender()}
+  function sperfect(){
+    var t=SC[scl].t;sreset();sprogRender();$("sres").textContent="🎉 Perfect! "+t;
+    send("mscaledone",{t:t});if(pl&&!pl.p)$("sask").style.display="";
+  }
+  function scaleNote(m){
+    if(scl<0||mp.style.display!=="flex"||mtab!=="s")return;
+    var st=SC[scl].s,exp=st[sdone].slice().sort(function(a,b){return a-b}),i;
+    if(scur.indexOf(m)>=0){sfail("You played "+nm(m)+" twice");return}
+    scur.push(m);
+    if(sbase===null){
+      if(scur.length<exp.length)return;
+      var pn=scur.slice().sort(function(a,b){return a-b}),ok=true,b=pn[0]-exp[0];
+      for(i=0;i<exp.length;i++)if(pn[i]-b!==exp[i])ok=false;
+      if(!ok||((b%12)+12)%12!==SC[scl].k){sfail("Start on "+NN[SC[scl].k]);return}
+      sbase=b;
+    }else{
+      var want=exp.map(function(o){return sbase+o});
+      if(want.indexOf(m)<0){sfail("You played "+nm(m)+" but we needed "+want.map(nm).join(" + "));return}
+    }
+    if(scur.length>=exp.length){sdone++;scur=[];if(sdone>=st.length){sperfect();return}}
+    $("sres").textContent="👍 Keep going…";sprogRender();
+  }
+  $("shint").onclick=function(){
+    if(scl<0){$("sres").textContent="Spin the wheel first!";return}
+    if(sbase===null){$("sres").textContent="Start on "+NN[SC[scl].k];return}
+    $("sres").textContent="Next: "+SC[scl].s[sdone].map(function(o){return nm(sbase+o)}).join(" + ");
+  };
+  $("sask").onclick=function(){if(!pl)return;send("starask",{n:pl.n});this.style.display="none";$("sres").textContent="Asked Dad for a star!"};
   $("sspin").onclick=function(){
-    var el=$("sdisp"),fin=SC[Math.floor(Math.random()*SC.length)],c=0;
-    var iv=setInterval(function(){c++;el.textContent=c>10?fin:SC[Math.floor(Math.random()*SC.length)];
-      if(c>10){clearInterval(iv);send("mscale",{t:fin})}},80);
+    var fi=Math.floor(Math.random()*SC.length),c=0,el=$("sdisp");
+    var iv=setInterval(function(){c++;el.textContent=c>10?SC[fi].t:SC[Math.floor(Math.random()*SC.length)].t;
+      if(c>10){clearInterval(iv);setScale(fi);send("mscale",{i:fi})}},80);
   };
 
   function showTab(k){
