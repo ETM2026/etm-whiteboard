@@ -34,7 +34,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
 #sym{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:none;gap:6px;z-index:4;flex-wrap:wrap;justify-content:center;max-width:94%;background:var(--panel);padding:6px;border-radius:12px;border:1px solid var(--line)}
 #brand{font-weight:700;font-size:15px}
 #wp{z-index:8!important}#wb{display:grid;gap:10px;grid-template-columns:1fr 1fr}#wb button{font-size:20px;padding:16px;font-weight:700}
-#gp,#sp,#wp{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:12px}
+#gp,#sp,#wp,#mp{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:12px}
 .gc{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;max-width:96vw;max-height:96vh;overflow:auto;text-align:center}
 .gh{display:flex;gap:8px;justify-content:center;margin:8px 0}
 #gsc{font-size:20px;font-weight:700;margin-top:4px}
@@ -89,6 +89,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     <button id="bg">Paper: Blank</button>
     <button id="save">Save picture</button>
     <button id="starsb">Stars ⭐</button>
+    <button id="musicb">Music</button>
     <button id="games">Games</button>
     <button id="whoami">Who?</button>
     <button id="mic" aria-pressed="false">Mic off</button>
@@ -100,6 +101,22 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   <div class="gh"><button id="g1">Tic tac toe</button><button id="g2">Connect 4</button><button id="g3">Hangman</button></div>
   <div id="gsc"></div><p id="gst"></p><div id="gbd"></div><div id="ghg" style="display:none"></div>
   <div class="gh"><button id="gnew">New game</button><button id="gres">Reset score</button><button id="gx">Close</button></div>
+</div></div>
+<div id="mp"><div class="gc" style="width:min(96vw,640px)">
+ <div class="gh"><button id="tn" aria-pressed="true">Notes</button><button id="tt" aria-pressed="false">Theory</button><button id="ts" aria-pressed="false">Scales</button></div>
+ <div id="mn">
+  <div class="gh"><button id="mmode">Mode: Solo</button><button id="mtim">Timer: off</button></div>
+  <div id="msc" style="font-weight:700;margin:6px 0">Streak: 0 · Best: 0</div>
+  <canvas id="stf" width="500" height="180" style="position:static;width:100%;max-width:500px;height:auto;background:#fff;border:2px solid var(--line);border-radius:10px;cursor:default"></canvas>
+  <div id="mmsg" style="min-height:1.4em;margin:6px 0"></div>
+  <div class="gh" id="mkeys" style="flex-wrap:wrap"></div>
+  <div class="gh"><button id="mask" style="display:none">Ask for a star ⭐</button></div>
+  <div id="mmidi" style="font-size:13px;opacity:.7">Plug in a USB piano to play the notes on it.</div>
+ </div>
+ <div id="mt" style="display:none"><div style="font-size:14px">What does this mean?</div><div id="tsym" style="font-size:36px;font-weight:700;margin:10px 0"></div>
+  <div id="topts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="tmsg" style="min-height:1.4em;margin-top:8px"></div></div>
+ <div id="ms" style="display:none"><div id="sdisp" style="font-size:24px;font-weight:700;color:var(--accent);margin:14px 0;min-height:2.6em">Ready to spin!</div><button id="sspin">🔮 Spin challenge</button></div>
+ <div class="gh"><button id="mclose">Close</button></div>
 </div></div>
 <div id="wp"><div class="gc"><h1 style="margin:0 0 12px;font-size:22px">Who's here?</h1><div id="wb"></div></div></div>
 <div id="sp"><div class="gc" id="spc"></div></div>
@@ -123,7 +140,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   var stage=document.getElementById("stage"),paper=document.getElementById("paper"),cv=document.getElementById("c"),ctx=cv.getContext("2d");
   var me=Math.random().toString(36).slice(2,8),n=0;
   var strokes=[],redo=[],cur=null,color=COLORS[1][0],size=SIZES[1],tool="pen",bgMode=0;
-  var BG=["Blank","Grid","Lines","Graph","Number line"];
+  var BG=["Blank","Grid","Lines","Graph","Number line","Staff"];
 
   function mk(parent,html,fn){var b=document.createElement("button");b.innerHTML=html;b.onclick=fn;parent.appendChild(b);return b}
   var cbox=document.getElementById("colors");
@@ -152,6 +169,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     if(m===2){for(i=50;i<=H;i+=50){x.moveTo(0,i);x.lineTo(W,i)}}
     x.stroke();
     x.strokeStyle="#44506a";x.fillStyle="#44506a";x.lineWidth=3;x.beginPath();
+    if(m===5){for(var a=0;a<5;a++)for(var j=0;j<5;j++){var yy=110+a*190+j*20;x.moveTo(60,yy);x.lineTo(W-60,yy)}}
     if(m===3){x.moveTo(800,0);x.lineTo(800,H);x.moveTo(0,480);x.lineTo(W,480)}
     if(m===4){x.moveTo(60,500);x.lineTo(W-60,500);x.font="26px sans-serif";x.textAlign="center";
       for(i=0;i<=20;i++){var px=80+i*72;x.moveTo(px,486);x.lineTo(px,514);x.fillText(String(i-10),px,556)}}
@@ -352,6 +370,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     else if(t==="ptr"){showPtr(d)}else if(t==="page"){goPage(d.n,true)}else if(t==="bg"){setBg(d.g,d.m,true)}else if(t==="img"){setImg(d.g,d.u,true)}
     else if(t==="game"){if(d&&((Array.isArray(d.b)&&((d.k==="ttt"&&d.b.length===9)||(d.k==="c4"&&d.b.length===42)))||(d.k==="hang"&&Array.isArray(d.g)&&typeof d.word==="string"))){game=d;showGame()}}
     else if(t==="gameclose"){hideGame()}
+    else if(t==="mmode"&&d){showMusic();setRace(d.race===true,false)}
+    else if(t==="mnote"&&d&&mrace&&NY[d.c]&&NY[d.c][d.n+d.o]){
+      mclef=d.c;mnote=d.n;moct=d.o;document.getElementById("mmsg").textContent=d.pt?"Point to "+(other||"them")+"!":"";
+      if(d.pt){rs.them++;raceCheck()}drawStaff();upd()}
+    else if(t==="mscale"&&d&&typeof d.t==="string"){showMusic("s");document.getElementById("sdisp").textContent=d.t.slice(0,80)}
+    else if(t==="starask"&&d&&pl&&pl.p&&typeof d.n==="string"){var nm=d.n.slice(0,12);toast(nm+" is asking for a star ⭐","Give ⭐",function(){award(nm)})}
     else if(t==="scorereset"){sc.you=sc.them=sc.draws=0;saveScore();renderScore()}
     else if(t==="hello"&&d&&typeof d.n==="string"){other=d.n.slice(0,12);renderScore();if(pl&&pl.p&&S[other]!==undefined)send("star",{to:other,n:S[other]})}
     else if(t==="star"&&d&&pl&&d.to===pl.n&&typeof d.n==="number"){S[d.to]=Math.max(0,Math.min(999,Math.floor(d.n)));saveS();if(sp.style.display==="flex")showStars()}
@@ -544,6 +568,119 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     if(!stk)return;var st={id:me+"-"+(n++),g:pg,c:"#000",w:size*20+60,t:Date.now(),img:stk,p:[pos(e)]};
     strokes.push(st);redo=[];send("stroke",st);redraw();
   }
+  var mrace=false,rs={you:0,them:0},mclef="treble",mnote="C",moct=4,mstreak=0,mbest=0,mtimer=null,mtl=30,mtOn=false,midiOn=false,askFlag=false,mtab="n",mp=document.getElementById("mp");
+  var NY={treble:{E4:120,F4:110,G4:100,A4:90,B4:80,C5:70,D5:60,E5:50,F5:40},bass:{G2:120,A2:110,B2:100,C3:90,D3:80,E3:70,F3:60,G3:50,A3:40}};
+  function $(i){return document.getElementById(i)}
+  function toast(txt,bl,fn){
+    var t=document.createElement("div");
+    t.style.cssText="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9;background:var(--panel);color:var(--ink);border:2px solid var(--accent);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 18px rgba(0,0,0,.25)";
+    t.appendChild(document.createTextNode(txt));mk(t,bl,function(){fn();t.remove()});document.body.appendChild(t);
+    setTimeout(function(){if(t.parentNode)t.remove()},12000);
+  }
+  function award(nm){
+    if(!PEOPLE.slice(1).some(function(q){return q.n===nm}))return;
+    S[nm]=(S[nm]||0)+1;saveS();send("star",{to:nm,n:S[nm]});
+  }
+  function drawStaff(){
+    var c=$("stf"),x=c.getContext("2d");x.clearRect(0,0,c.width,c.height);
+    x.strokeStyle="#222";x.lineWidth=2;for(var i=0;i<5;i++){x.beginPath();x.moveTo(20,40+i*20);x.lineTo(480,40+i*20);x.stroke()}
+    x.fillStyle="#111";x.font="70px Georgia";x.fillText(mclef==="treble"?"𝄞":"𝄢",30,mclef==="treble"?115:85);
+    x.font="14px sans-serif";x.fillText(mclef+" clef",30,165);
+    var y=NY[mclef][mnote+moct]||80,X=260;
+    x.save();x.translate(X,y);x.scale(1.4,1);x.beginPath();x.arc(0,0,9,0,7);x.fill();x.restore();
+    x.beginPath();x.lineWidth=2.5;if(y<80){x.moveTo(X-12,y);x.lineTo(X-12,y+55)}else{x.moveTo(X+12,y);x.lineTo(X+12,y-55)}x.stroke();
+  }
+  function genNote(pt){
+    var cl=Math.random()<.5?"treble":"bass",ks=Object.keys(NY[cl]),k=ks[Math.floor(Math.random()*ks.length)];
+    mclef=cl;mnote=k[0];moct=+k[1];drawStaff();
+    if(mrace)send("mnote",{c:mclef,n:mnote,o:moct,pt:pt?1:0});
+  }
+  function upd(){
+    $("msc").textContent=mrace?(pl?pl.n:"You")+" "+rs.you+" – "+rs.them+" "+(other||"Them")+"  (first to 10)":"Streak: "+mstreak+" · Best: "+mbest;
+    $("mask").style.display=(pl&&!pl.p&&((!mrace&&mstreak>0&&mstreak%10===0)||askFlag))?"":"none";
+  }
+  function raceCheck(){
+    var w=rs.you>=10?1:rs.them>=10?2:0;if(!w)return;
+    if(conns.length){w===1?sc.you++:sc.them++;saveScore()}
+    $("mmsg").textContent=w===1?"You won the race! 🏆":(other||"They")+" won the race!";
+    askFlag=w===1;rs={you:0,them:0};
+  }
+  function mguess(l){
+    if(mp.style.display!=="flex"||mtab!=="n")return;
+    if(l===mnote){
+      askFlag=false;
+      if(mrace){rs.you++;$("mmsg").textContent="Point! ✔";raceCheck();genNote(true)}
+      else{mstreak++;if(mstreak>mbest)mbest=mstreak;$("mmsg").textContent="";genNote(false)}
+      upd();
+    }else if(!mrace){mstreak=0;upd()}else $("mmsg").textContent="Not quite – try again!";
+  }
+  function clearTimer(){clearInterval(mtimer);mtOn=false;$("mtim").textContent="Timer: off"}
+  function setRace(on,mine){
+    mrace=on;rs={you:0,them:0};mstreak=0;askFlag=false;clearTimer();
+    $("mmode").textContent="Mode: "+(on?"Race":"Solo");$("mmsg").textContent=on?"First to 10 wins!":"";
+    if(mine){send("mmode",{race:on});genNote(false)}
+    upd();
+  }
+  $("mmode").onclick=function(){setRace(!mrace,true)};
+  $("mtim").onclick=function(){
+    if(mrace)return;if(mtOn){clearTimer();return}
+    mtOn=true;mtl=30;mstreak=0;upd();
+    mtimer=setInterval(function(){mtl--;$("mtim").textContent="Time: "+mtl+"s";
+      if(mtl<=0){clearTimer();$("mmsg").textContent="Time up! Best streak: "+mbest}},1000);
+  };
+  ["C","D","E","F","G","A","B"].forEach(function(l){var b=mk($("mkeys"),l,function(){mguess(l)});b.style.cssText="width:56px;height:72px;font-size:22px;font-weight:700"});
+  $("mask").onclick=function(){send("starask",{n:pl.n});askFlag=false;mstreak=0;upd();$("mmsg").textContent="Asked Dad for a star!"};
+
+  function midiMsg(m){
+    if(m.data[0]===144&&m.data[2]>0){
+      var l=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][m.data[1]%12];
+      if(l.length===1)mguess(l);else $("mmsg").textContent="That's a black key – try a white one"}
+  }
+  function bindMidi(m){var c=0;m.inputs.forEach(function(i){i.onmidimessage=midiMsg;c++});
+    $("mmidi").textContent=c?"🎹 Piano connected – play the note!":"No piano found. Plug in a USB piano (Chrome) or tap the keys."}
+  function initMidi(){
+    if(midiOn)return;midiOn=true;
+    if(!navigator.requestMIDIAccess){$("mmidi").textContent="Piano input isn't supported in this browser – tap the keys.";return}
+    navigator.requestMIDIAccess().then(function(m){bindMidi(m);m.onstatechange=function(){bindMidi(m)}},
+      function(){$("mmidi").textContent="Piano access was blocked – tap the keys."});
+  }
+
+  var TQ=[
+    {sym:"f",ans:"Forte (loud)",opts:["Forte (loud)","Piano (soft)","Staccato","Legato"]},
+    {sym:"p",ans:"Piano (soft)",opts:["Piano (soft)","Forte (loud)","Crotchet","Mezzo forte"]},
+    {sym:"mf",ans:"Moderately loud",opts:["Moderately loud","Very soft","Very loud","Getting slower"]},
+    {sym:"Staccato ( . )",ans:"Short and detached",opts:["Short and detached","Smooth and connected","Play loud","Hold full value"]},
+    {sym:"Slur ( ⌒ )",ans:"Smooth and connected (legato)",opts:["Smooth and connected (legato)","Detached","Repeat the line","Loud accent"]},
+    {sym:"Crotchet ♩",ans:"1 beat",opts:["1 beat","2 beats","4 beats","Half a beat"]},
+    {sym:"Minim (white note with a stem)",ans:"2 beats",opts:["2 beats","1 beat","3 beats","4 beats"]},
+    {sym:"Semibreve (white note, no stem)",ans:"4 beats",opts:["4 beats","2 beats","1 beat","3 beats"]},
+    {sym:"Crescendo ( < )",ans:"Gradually louder",opts:["Gradually louder","Gradually softer","Suddenly loud","Getting slower"]}
+  ],tq=null;
+  function loadTQ(){
+    tq=TQ[Math.floor(Math.random()*TQ.length)];$("tsym").textContent=tq.sym;
+    var g=$("topts");g.innerHTML="";
+    tq.opts.slice().sort(function(){return Math.random()-.5}).forEach(function(o){
+      mk(g,o,function(){
+        if(o===tq.ans){$("tmsg").textContent="Correct! Fantastic theory work. ✔";loadTQ()}
+        else $("tmsg").textContent="Try again! Check your RIAM Primary book."}).style.padding="12px"});
+  }
+  var SC=["C major scale (hands together, 1 octave)","G major scale (right hand, 1 octave)","G major scale (left hand, 1 octave)","D major scale (right hand, 1 octave)","C major contrary motion scale","C major arpeggio (right hand)","G major arpeggio (left hand)"];
+  $("sspin").onclick=function(){
+    var el=$("sdisp"),fin=SC[Math.floor(Math.random()*SC.length)],c=0;
+    var iv=setInterval(function(){c++;el.textContent=c>10?fin:SC[Math.floor(Math.random()*SC.length)];
+      if(c>10){clearInterval(iv);send("mscale",{t:fin})}},80);
+  };
+
+  function showTab(k){
+    mtab=k;$("mn").style.display=k==="n"?"":"none";$("mt").style.display=k==="t"?"":"none";$("ms").style.display=k==="s"?"":"none";
+    $("tn").setAttribute("aria-pressed",k==="n");$("tt").setAttribute("aria-pressed",k==="t");$("ts").setAttribute("aria-pressed",k==="s");
+    if(k==="n")drawStaff();
+  }
+  function showMusic(k){mp.style.display="flex";initMidi();showTab(k||mtab);upd()}
+  $("tn").onclick=function(){showTab("n")};$("tt").onclick=function(){showTab("t")};$("ts").onclick=function(){showTab("s")};
+  $("musicb").onclick=function(){showMusic("n")};
+  $("mclose").onclick=function(){mp.style.display="none";clearTimer()};
+  genNote(false);loadTQ();
   window.addEventListener("resize",fit);fit();
 })();
 </script>
