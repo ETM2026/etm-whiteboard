@@ -90,8 +90,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   <div id="who" role="status">Not connected</div>
 </div>
 <div id="gp" role="dialog" aria-label="Games"><div class="gc">
-  <div class="gh"><button id="g1">Tic tac toe</button><button id="g2">Connect 4</button></div>
-  <p id="gst"></p><div id="gbd"></div>
+  <div class="gh"><button id="g1">Tic tac toe</button><button id="g2">Connect 4</button><button id="g3">Hangman</button></div>
+  <p id="gst"></p><div id="gbd"></div><div id="ghg" style="display:none"></div>
   <div class="gh"><button id="gnew">New game</button><button id="gx">Close</button></div>
 </div></div>
 <input type="file" id="file" accept="image/*" hidden>
@@ -165,7 +165,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   function callAll(){conns.forEach(function(c){if(mic&&peer)calls.push(peer.call(c.peer,mic))})}
   var game=null,gp=document.getElementById("gp");
   function myMark(){return game.opener===me?0:1}
-  function newGame(k){game={k:k,b:new Array(k==="ttt"?9:42).fill(-1),turn:0,win:"",opener:me};send("game",game);showGame()}
+  function newGame(k){game=k==="hang"?{k:"hang",setter:me,stage:"set",word:"",hint:"",g:[],win:""}:{k:k,b:new Array(k==="ttt"?9:42).fill(-1),turn:0,win:"",opener:me};send("game",game);showGame()}
   function gcheck(){
     var b=game.b,t=game.k==="ttt",w=t?3:7,h=t?3:6,L=t?3:4,dirs=[[1,0],[0,1],[1,1],[1,-1]];
     for(var y=0;y<h;y++)for(var x=0;x<w;x++){var v=b[y*w+x];if(v<0)continue;
@@ -180,7 +180,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     game.win=gcheck();game.turn=1-m;send("game",game);showGame();
   }
   function showGame(){
-    closeText();var g=game,t=g.k==="ttt",cols=t?3:7,names=t?["X","O"]:["Red","Yellow"],cs=t?["#2f6fed","#e5384b"]:["#e5384b","#f2b705"];
+    closeText();var g=game;if(g.k==="hang"){showHang();return}document.getElementById("ghg").style.display="none";document.getElementById("gbd").style.display="";var t=g.k==="ttt",cols=t?3:7,names=t?["X","O"]:["Red","Yellow"],cs=t?["#2f6fed","#e5384b"]:["#e5384b","#f2b705"];
     gp.style.display="flex";
     var st=document.getElementById("gst"),bd=document.getElementById("gbd"),mm=myMark();
     st.textContent=g.win==="draw"?"It's a draw!":g.win!==""?names[g.win]+" wins! 🎉":
@@ -191,10 +191,55 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
       b.textContent=v<0?"":(t?names[v]:"●");b.style.color=v<0?"":cs[v];
       b.setAttribute("aria-label","Square "+(i+1));b.onclick=function(){play(i)};bd.appendChild(b)});
   }
+  function guess(l){
+    if(!game||game.k!=="hang"||game.stage!=="play"||game.win!=="")return;
+    if(game.setter===me&&conns.length)return;
+    game.g=game.g||[];if(game.g.indexOf(l)>=0)return;game.g.push(l);
+    var w=game.word,wr=game.g.filter(function(x){return w.indexOf(x)<0}).length;
+    game.win=wr>=7?"lost":w.split("").every(function(x){return game.g.indexOf(x)>=0})?"won":"";
+    send("game",game);showGame();
+  }
+  function showHang(){
+    closeText();gp.style.display="flex";
+    var g=game,box=document.getElementById("ghg"),st=document.getElementById("gst"),M=7;
+    document.getElementById("gbd").style.display="none";box.style.display="block";box.innerHTML="";
+    var word=String(g.word||"").toLowerCase().replace(/[^a-z]/g,"").slice(0,20),
+      gs=(g.g||[]).filter(function(l){return /^[a-z]$/.test(l)}),
+      iSet=g.setter===me,alone=!conns.length,
+      wrong=gs.filter(function(l){return word.indexOf(l)<0}).length,
+      over=g.win==="won"||g.win==="lost",canG=!iSet||alone;
+    function el(tag,txt,css){var e=document.createElement(tag);if(txt)e.textContent=txt;if(css)e.style.cssText=css;box.appendChild(e);return e}
+    var inCss="font:inherit;font-size:20px;padding:10px;width:240px;max-width:80%;margin:6px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);text-align:center";
+    if(g.stage==="set"){
+      if(!iSet){st.textContent="Waiting for the other person to pick a word…";return}
+      st.textContent="Pick a word to spell";
+      var wi=el("input","",inCss);wi.placeholder="Secret word";wi.maxLength=20;wi.autocapitalize="off";wi.setAttribute("aria-label","Secret word");
+      box.appendChild(document.createElement("br"));
+      var hi=el("input","",inCss);hi.placeholder="Clue (optional)";hi.maxLength=60;hi.setAttribute("aria-label","Clue");
+      box.appendChild(document.createElement("br"));
+      var go=el("button","Start game","margin-top:8px");
+      go.onclick=function(){var w=wi.value.toLowerCase().replace(/[^a-z]/g,"");if(w.length<2){wi.focus();return}
+        game={k:"hang",setter:me,stage:"play",word:w,hint:hi.value.trim().slice(0,60),g:[],win:""};send("game",game);showGame()};
+      wi.focus();return;
+    }
+    st.textContent=g.win==="won"?"Spelled it! 🎉":g.win==="lost"?"Out of guesses. The word was "+word.toUpperCase():
+      (canG?"Guess the word! ":"They're guessing… ")+(M-wrong)+" wrong guesses left";
+    var parts=['<circle cx="82" cy="40" r="10"/>','<line x1="82" y1="50" x2="82" y2="85"/>','<line x1="82" y1="58" x2="68" y2="74"/>','<line x1="82" y1="58" x2="96" y2="74"/>','<line x1="82" y1="85" x2="70" y2="108"/>','<line x1="82" y1="85" x2="94" y2="108"/>','<path d="M77 36l4 4m0-4l-4 4m10-4l4 4m0-4l-4 4"/>'];
+    el("div").innerHTML='<svg viewBox="0 0 120 130" width="150" height="160" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M15 120h60M35 120V15h47v10"/>'+parts.slice(0,wrong).join("")+'</svg>';
+    el("div",word.split("").map(function(l){return (!canG||over||gs.indexOf(l)>=0)?l.toUpperCase():"_"}).join(" "),"font-size:30px;letter-spacing:.15em;font-family:monospace;margin:8px 0;word-break:break-all");
+    if(g.hint)el("div","Clue: "+String(g.hint).slice(0,60),"margin-bottom:8px");
+    var kb=el("div","","display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:380px;margin:0 auto");
+    "abcdefghijklmnopqrstuvwxyz".split("").forEach(function(l){
+      var b=document.createElement("button"),used=gs.indexOf(l)>=0;b.textContent=l.toUpperCase();
+      b.style.cssText="width:40px;height:40px;min-height:0;padding:0";b.disabled=used||over||!canG;
+      if(used)b.style.color=word.indexOf(l)>=0?"#1f9d55":"#e5384b";
+      b.onclick=function(){guess(l)};kb.appendChild(b)});
+  }
   function hideGame(){game=null;gp.style.display="none"}
   document.getElementById("games").onclick=function(){if(game)showGame();else newGame("ttt")};
   document.getElementById("g1").onclick=function(){newGame("ttt")};
   document.getElementById("g2").onclick=function(){newGame("c4")};
+  document.getElementById("g3").onclick=function(){newGame("hang")};
   document.getElementById("gnew").onclick=function(){newGame(game?game.k:"ttt")};
   document.getElementById("gx").onclick=function(){hideGame();send("gameclose",{})};
   var ti=null,dirty=false;
@@ -279,7 +324,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     }else if(t==="undo"){var k=find(d.id);if(k>=0){strokes.splice(k,1);redraw()}}
     else if(t==="clear"){strokes=strokes.filter(function(s){return s.g!==d.g});redraw()}
     else if(t==="ptr"){showPtr(d)}else if(t==="page"){goPage(d.n,true)}else if(t==="bg"){setBg(d.g,d.m,true)}else if(t==="img"){setImg(d.g,d.u,true)}
-    else if(t==="game"){if(d&&Array.isArray(d.b)&&((d.k==="ttt"&&d.b.length===9)||(d.k==="c4"&&d.b.length===42))){game=d;showGame()}}
+    else if(t==="game"){if(d&&((Array.isArray(d.b)&&((d.k==="ttt"&&d.b.length===9)||(d.k==="c4"&&d.b.length===42)))||(d.k==="hang"&&Array.isArray(d.g)&&typeof d.word==="string"))){game=d;showGame()}}
     else if(t==="gameclose"){hideGame()}
     else if(t==="sync"&&d&&Array.isArray(d.s)){
       mergeInfo(d.p);var ch=false;d.s.forEach(function(s){if(find(s.id)<0){strokes.push(s);ch=true}});
