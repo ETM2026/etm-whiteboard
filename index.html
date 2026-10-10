@@ -113,8 +113,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   <div class="gh"><button id="mask" style="display:none">Ask for a star ⭐</button></div>
   <div id="mmidi" style="font-size:13px;opacity:.7">Plug in a USB piano to play the notes on it.</div>
  </div>
- <div id="mt" style="display:none"><div style="font-size:14px">What does this mean?</div><div id="tsym" style="font-size:36px;font-weight:700;margin:10px 0"></div>
-  <div id="topts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="tmsg" style="min-height:1.4em;margin-top:8px"></div></div>
+ <div id="mt" style="display:none"><div id="tqq" style="font-size:14px">What does this mean?</div><div id="tsym" style="font-size:36px;font-weight:700;margin:10px 0"></div>
+  <div id="topts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="tmsg" style="min-height:1.4em;margin-top:8px"></div>
+  <div style="font-size:13px;opacity:.7;margin-top:6px">🎹 Using a piano? Press C, D, E or F to pick that answer.</div></div>
  <div id="ms" style="display:none"><div id="sdisp" style="font-size:24px;font-weight:700;color:var(--accent);margin:14px 0;min-height:2.6em">Ready to spin!</div><button id="sspin">🔮 Spin challenge</button></div>
  <div class="gh"><button id="mclose">Close</button></div>
 </div></div>
@@ -635,7 +636,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     if((m.data[0]&240)===144&&m.data[2]>0){
       var l=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][m.data[1]%12],oc=Math.floor(m.data[1]/12)-1;
       $("mmidi").textContent="🎹 You played "+l+oc;
-      if(l.length===1)mguess(l);else $("mmsg").textContent="That's a black key – try a white one"}
+      if(l.length===1){if(mtab==="t")tpick(l);else mguess(l)}else $(mtab==="t"?"tmsg":"mmsg").textContent="That's a black key – try a white one"}
   }
   function bindMidi(m){var c=0;m.inputs.forEach(function(i){i.onmidimessage=midiMsg;c++});
     $("mmidi").textContent=c?"🎹 Piano connected – play the note!":"No piano found. Plug in a USB piano (Chrome) or tap the keys."}
@@ -646,24 +647,48 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
       function(){$("mmidi").textContent="Piano access was blocked – tap the keys."});
   }
 
+  function nsvg(k){
+    function h(x,y,f,rx){return '<ellipse cx="'+x+'" cy="'+y+'" rx="'+(rx||14)+'" ry="10" transform="rotate(-20 '+x+' '+y+')" '+(f?'fill="currentColor" stroke="none"':'fill="none"')+'/>'}
+    function st(x,y){return '<line x1="'+(x+13)+'" y1="'+(y-3)+'" x2="'+(x+13)+'" y2="'+(y-55)+'"/>'}
+    var b="";
+    if(k==="crotchet")b=h(90,80,1)+st(90,80);
+    else if(k==="minim")b=h(90,80,0)+st(90,80);
+    else if(k==="semibreve")b=h(90,80,0,18);
+    else if(k==="quaver")b=h(90,80,1)+st(90,80)+'<path d="M103 22c2 14 22 18 20 38"/>';
+    else if(k==="staccato")b=h(90,70,1)+st(90,70)+'<circle cx="90" cy="108" r="4" fill="currentColor" stroke="none"/>';
+    else if(k==="slur")b=h(55,70,1)+st(55,70)+h(145,70,1)+st(145,70)+'<path d="M55 92Q100 128 145 92"/>';
+    else if(k==="crescendo")b='<path d="M30 65L170 40M30 65L170 90"/>';
+    return '<svg viewBox="0 0 200 130" width="200" height="130" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" role="img" aria-label="'+k+'">'+b+'</svg>';
+  }
   var TQ=[
     {sym:"f",ans:"Forte (loud)",opts:["Forte (loud)","Piano (soft)","Staccato","Legato"]},
     {sym:"p",ans:"Piano (soft)",opts:["Piano (soft)","Forte (loud)","Crotchet","Mezzo forte"]},
     {sym:"mf",ans:"Moderately loud",opts:["Moderately loud","Very soft","Very loud","Getting slower"]},
-    {sym:"Staccato ( . )",ans:"Short and detached",opts:["Short and detached","Smooth and connected","Play loud","Hold full value"]},
-    {sym:"Slur ( ⌒ )",ans:"Smooth and connected (legato)",opts:["Smooth and connected (legato)","Detached","Repeat the line","Loud accent"]},
-    {sym:"Crotchet ♩",ans:"1 beat",opts:["1 beat","2 beats","4 beats","Half a beat"]},
-    {sym:"Minim (white note with a stem)",ans:"2 beats",opts:["2 beats","1 beat","3 beats","4 beats"]},
-    {sym:"Semibreve (white note, no stem)",ans:"4 beats",opts:["4 beats","2 beats","1 beat","3 beats"]},
-    {sym:"Crescendo ( < )",ans:"Gradually louder",opts:["Gradually louder","Gradually softer","Suddenly loud","Getting slower"]}
-  ],tq=null;
+    {d:"staccato",q:"What does the dot under this note mean?",ans:"Short and detached",opts:["Short and detached","Smooth and connected","Play loud","Hold full value"]},
+    {d:"slur",q:"What does the curved line joining these notes mean?",ans:"Smooth and connected (legato)",opts:["Smooth and connected (legato)","Detached","Repeat the line","Loud accent"]},
+    {d:"crescendo",q:"What does this sign mean?",ans:"Gradually louder",opts:["Gradually louder","Gradually softer","Suddenly loud","Getting slower"]},
+    {d:"crotchet",q:"How many beats is this note worth?",ans:"1 beat",opts:["1 beat","2 beats","4 beats","Half a beat"]},
+    {d:"minim",q:"How many beats is this note worth?",ans:"2 beats",opts:["2 beats","1 beat","3 beats","4 beats"]},
+    {d:"semibreve",q:"How many beats is this note worth?",ans:"4 beats",opts:["4 beats","2 beats","1 beat","3 beats"]},
+    {d:"quaver",q:"How many beats is this note worth?",ans:"Half a beat",opts:["Half a beat","1 beat","2 beats","4 beats"]},
+    {d:"crotchet",q:"What is this note called?",ans:"Crotchet",opts:["Crotchet","Minim","Semibreve","Quaver"]},
+    {d:"minim",q:"What is this note called?",ans:"Minim",opts:["Minim","Crotchet","Semibreve","Quaver"]},
+    {d:"semibreve",q:"What is this note called?",ans:"Semibreve",opts:["Semibreve","Minim","Crotchet","Quaver"]},
+    {d:"quaver",q:"What is this note called?",ans:"Quaver",opts:["Quaver","Crotchet","Minim","Semibreve"]}
+  ],tq=null,tcur=[],tstreak=0;
   function loadTQ(){
-    tq=TQ[Math.floor(Math.random()*TQ.length)];$("tsym").textContent=tq.sym;
-    var g=$("topts");g.innerHTML="";
-    tq.opts.slice().sort(function(){return Math.random()-.5}).forEach(function(o){
-      mk(g,o,function(){
-        if(o===tq.ans){$("tmsg").textContent="Correct! Fantastic theory work. ✔";loadTQ()}
-        else $("tmsg").textContent="Try again! Check your RIAM Primary book."}).style.padding="12px"});
+    tq=TQ[Math.floor(Math.random()*TQ.length)];$("tqq").textContent=tq.q||"What does this mean?";if(tq.d)$("tsym").innerHTML=nsvg(tq.d);else $("tsym").textContent=tq.sym;
+    var g=$("topts");g.innerHTML="";tcur=tq.opts.slice().sort(function(){return Math.random()-.5});
+    tcur.forEach(function(o,i){mk(g,"<b>"+"CDEF"[i]+"</b> · "+o,function(){tans(o)}).style.padding="12px"});
+  }
+  function tans(o){
+    if(o===tq.ans){tstreak++;$("tmsg").textContent="Correct! Fantastic theory work. ✔ ("+tstreak+" in a row)";loadTQ()}
+    else{tstreak=0;$("tmsg").textContent="Try again! Check your RIAM Primary book."}
+  }
+  function tpick(l){
+    if(mp.style.display!=="flex"||mtab!=="t")return;
+    var i="CDEF".indexOf(l);if(i<0){$("tmsg").textContent="Press C, D, E or F to answer";return}
+    tans(tcur[i]);
   }
   var SC=["C major scale (hands together, 1 octave)","G major scale (right hand, 1 octave)","G major scale (left hand, 1 octave)","D major scale (right hand, 1 octave)","C major contrary motion scale","C major arpeggio (right hand)","G major arpeggio (left hand)"];
   $("sspin").onclick=function(){
