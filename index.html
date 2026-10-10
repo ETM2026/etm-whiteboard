@@ -114,8 +114,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   <div id="mmidi" style="font-size:13px;opacity:.7">Plug in a USB piano to play the notes on it.</div>
  </div>
  <div id="mt" style="display:none"><div id="tqq" style="font-size:14px">What does this mean?</div><div id="tsym" style="font-size:36px;font-weight:700;margin:10px 0"></div>
-  <div id="topts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="tmsg" style="min-height:1.4em;margin-top:8px"></div>
-  <div style="font-size:13px;opacity:.7;margin-top:6px">🎹 Using a piano? Press C, D, E or F to pick that answer.</div></div>
+  <div id="topts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="tmsg" style="min-height:1.4em;margin-top:8px"></div></div>
  <div id="ms" style="display:none"><div id="sdisp" style="font-size:24px;font-weight:700;color:var(--accent);margin:14px 0;min-height:2.6em">Ready to spin!</div><button id="sspin">🔮 Spin challenge</button>
   <div id="sprog" style="font-size:20px;letter-spacing:.15em;margin:10px 0;word-break:break-all"></div>
   <div id="sres" style="min-height:1.4em;font-weight:600"></div>
@@ -644,7 +643,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
       var l=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][m.data[1]%12],oc=Math.floor(m.data[1]/12)-1;
       $("mmidi").textContent="🎹 You played "+l+oc;
       if(mtab==="s"){scaleNote(m.data[1]);return}
-      if(l.length===1){if(mtab==="t")tpick(l);else mguess(l)}else $(mtab==="t"?"tmsg":"mmsg").textContent="That's a black key – try a white one"}
+      if(l.length===1)mguess(l);else $("mmsg").textContent="That's a black key – try a white one"}
   }
   function bindMidi(m){var c=0;m.inputs.forEach(function(i){i.onmidimessage=midiMsg;c++});
     $("mmidi").textContent=c?"🎹 Piano connected – play the note!":"No piano found. Plug in a USB piano (Chrome) or tap the keys."}
@@ -687,16 +686,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   function loadTQ(){
     tq=TQ[Math.floor(Math.random()*TQ.length)];$("tqq").textContent=tq.q||"What does this mean?";if(tq.d)$("tsym").innerHTML=nsvg(tq.d);else $("tsym").textContent=tq.sym;
     var g=$("topts");g.innerHTML="";tcur=tq.opts.slice().sort(function(){return Math.random()-.5});
-    tcur.forEach(function(o,i){mk(g,"<b>"+"CDEF"[i]+"</b> · "+o,function(){tans(o)}).style.padding="12px"});
+    tcur.forEach(function(o,i){mk(g,o,function(){tans(o)}).style.padding="12px"});
   }
   function tans(o){
     if(o===tq.ans){tstreak++;$("tmsg").textContent="Correct! Fantastic theory work. ✔ ("+tstreak+" in a row)";loadTQ()}
     else{tstreak=0;$("tmsg").textContent="Try again! Check your RIAM Primary book."}
-  }
-  function tpick(l){
-    if(mp.style.display!=="flex"||mtab!=="t")return;
-    var i="CDEF".indexOf(l);if(i<0){$("tmsg").textContent="Press C, D, E or F to answer";return}
-    tans(tcur[i]);
   }
   var SU=[0,2,4,5,7,9,11,12],SD=[11,9,7,5,4,2,0],SM=SU.concat(SD),AR=[0,4,7,12,7,4,0],
     NN=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"],scl=-1,sdone=0,scur=[],sbase=null;
