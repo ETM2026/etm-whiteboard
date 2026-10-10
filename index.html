@@ -52,6 +52,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
 #gate button{width:100%}#scp button{margin-top:8px}#gate #tip{margin:12px 0 0;color:var(--ink);font-size:14px}
 #gate #go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
 .moreTools{display:flex;flex-wrap:wrap;gap:7px;width:100%;padding-top:8px;border-top:1px solid var(--line)}.moreTools[hidden]{display:none}.bar>.grp:empty,.bar>.sep{display:none}.extraDialog{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:7;padding:12px}#saved{font-size:12px;opacity:.8}.extraDialog input,.extraDialog select{font:inherit;padding:10px;margin:8px;border:1px solid var(--line);border-radius:8px}.extraDialog .gc{min-width:280px;max-width:620px}.extraDialog button{margin:4px}@media(max-width:650px){#brand{width:100%;text-align:center}.bar{gap:6px;padding:6px}.sw{width:29px;height:29px}button{padding:7px 9px}#who{margin-left:0}#sizes{display:none}}
+#videoDock{position:fixed;right:12px;bottom:12px;z-index:4;display:none;width:min(300px,42vw);max-height:55vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 4px 18px #0003}#videoDock header{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:6px}#videoDock video{display:block;width:100%;max-height:180px;background:#151922;border-radius:8px;object-fit:contain}#videoDock .videoName{font-size:12px;margin:6px 0 3px}#videoDock.compact .videoTile{display:none}#videoDock.compact{width:180px}@media(max-width:650px){#videoDock{width:150px;bottom:6px;right:6px}#videoDock video{max-height:110px}}
 </style>
 </head>
 <body>
@@ -125,6 +126,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
 </div></div>
 <div id="wp"><div class="gc"><h1 style="margin:0 0 12px;font-size:22px">Who's here?</h1><div id="wb"></div></div></div>
 <div id="sp"><div class="gc" id="spc"></div></div>
+<section id="videoDock" aria-label="Family video"><header><b>Family video</b><button id="videoMin" aria-label="Minimise video">−</button></header><div id="localTile" class="videoTile" hidden><div class="videoName">You · camera preview</div><video id="localVideo" autoplay playsinline muted></video></div><div id="remoteVideos"></div></section>
 <input type="file" id="sfile" accept="image/*" hidden>
 <input type="file" id="file" accept="image/*" hidden>
 <audio id="aud" autoplay></audio>
@@ -194,7 +196,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     clock=Math.max(clock,q.v||0);if((q.v||0)>=(pages[i].v||0)){pages[i].bg=q.bg||0;pages[i].v=q.v||0;setImg(i,q.img||"",true)}});label();paintBg()}
   function showPtr(d){var e=document.getElementById("pt");e.style.left=d.x*100+"%";e.style.top=d.y*100+"%";e.style.display="block";clearTimeout(ptT);ptT=setTimeout(function(){e.style.display="none"},1500)}
   function sendPtr(e){var t=Date.now();if(t-lastP<40)return;lastP=t;var q=pos(e);send("ptr",{x:q[0]/W,y:q[1]/H})}
-  function ans(call){call.answer();var a=document.createElement("audio");a.autoplay=true;document.body.appendChild(a);call.on("stream",function(st){a.srcObject=st;var pr=a.play();if(pr&&pr.catch)pr.catch(function(){status("Tap Test speaker, then switch Mic on to enable sound")})});call.on("close",function(){a.remove()})}
+  function ans(call){if(call.metadata&&call.metadata.kind==="video"){call.answer(camera||undefined);bindVideo(call);return}call.answer();var a=document.createElement("audio");a.autoplay=true;document.body.appendChild(a);call.on("stream",function(st){a.srcObject=st;var pr=a.play();if(pr&&pr.catch)pr.catch(function(){status("Tap Test speaker, then switch Mic on to enable sound")})});call.on("close",function(){a.remove()})}
   function callAll(){conns.forEach(function(c){if(mic&&peer)calls.push(peer.call(c.peer,mic))})}
   var game=null,gp=document.getElementById("gp"),sc={you:0,them:0,draws:0,last:""};
   function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
@@ -288,7 +290,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   document.getElementById("gnew").onclick=function(){newGame(game?game.k:"ttt")};
   document.getElementById("gres").onclick=function(){sc.you=sc.them=sc.draws=0;saveScore();renderScore();send("scorereset",{})};
   document.getElementById("gx").onclick=function(){hideGame();send("gameclose",{})};
-  var tasks=[],follow=true,taskPanel=null;var ti=null,dirty=false,deleted={},cleared={},clock=0;
+  var camera=null,videoCalls=[],videoTiles={},cameraBusy=false;var tasks=[],follow=true,taskPanel=null;var ti=null,dirty=false,deleted={},cleared={},clock=0;
   function tick(){clock=Math.max(clock+1,Date.now());return clock}
   function alive(s){return s&&typeof s.id==="string"&&Array.isArray(s.p)&&s.t>(deleted[s.id]||0)&&s.t>(cleared[s.g]||0)}
   function info(){return pages.map(function(q){return {bg:q.bg,img:q.img,v:q.v||0}})}
@@ -365,7 +367,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   /* ---- connection: first person in a room hosts, the next joins ---- */
   var peer=null,conns=[],code="",retryT=null,who=document.getElementById("who");
   function status(t,live){who.textContent=t;who.className=live?"live":""}
-  function update(){status(conns.length?conns.map(function(c){return (c.person||"Family")+(c.micOn?" 🎤":"")}).join(", ")+" · connected":"Waiting for the other person…",conns.length>0)}
+  function update(){status(conns.length?conns.map(function(c){return (c.person||"Family")+(c.micOn?" 🎤":"")+(c.videoOn?" 📹":"")}).join(", ")+" · connected":"Waiting for the other person…",conns.length>0)}
   function send(topic,data){var m={t:topic,d:data};conns.forEach(function(c){if(c.open)c.send(m)})}
   function handle(t,d){
     if(d&&typeof d.t==="number")clock=Math.max(clock,d.t);if(d&&typeof d.v==="number")clock=Math.max(clock,d.v);
@@ -403,17 +405,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   }
   function addConn(c){
     c.on("open",function(){
-      conns.push(c);update();c.send({t:"tasks",d:tasks});c.send({t:"micstate",d:!!mic});c.send({t:"sync",d:{s:strokes,p:info(),deleted:deleted,cleared:cleared,clock:clock}});c.send({t:"page",d:{n:pg}});if(mic)callAll();if(game)c.send({t:"game",d:game});c.send({t:"hello",d:{n:pl?pl.n:""}});
+      conns.push(c);update();c.send({t:"tasks",d:tasks});c.send({t:"micstate",d:!!mic});c.send({t:"videostate",d:!!camera});c.send({t:"sync",d:{s:strokes,p:info(),deleted:deleted,cleared:cleared,clock:clock}});c.send({t:"page",d:{n:pg}});if(mic)callAll();if(camera)callVideo(c.peer);if(game)c.send({t:"game",d:game});c.send({t:"hello",d:{n:pl?pl.n:""}});
     });
     c.on("data",function(m){
       if(!m||typeof m.t!=="string")return;
       conns.forEach(function(o){if(o!==c&&o.open)o.send(m)}); // host relays between guests
       if(m.t==="hello"&&m.d){c.person=String(m.d.n||"Family").slice(0,12);update()}
       if(m.t==="micstate"){c.micOn=!!m.d;update()}
+      if(m.t==="videostate"){c.videoOn=!!m.d;update()}
       handle(m.t,m.d);
     });
     function gone(){
-      conns=conns.filter(function(x){return x!==c});update();
+      conns=conns.filter(function(x){return x!==c});removeVideo(c.peer);update();
       if(peer&&!peer.hosting)retry();
     }
     c.on("close",gone);c.on("error",gone);
@@ -422,7 +425,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
     status("Reconnecting…");clearTimeout(retryT);retryT=setTimeout(start,3000);
   }
   function start(){
-    if(peer){try{peer.destroy()}catch(e){}}
+    videoCalls.forEach(function(c){c.close()});videoCalls=[];if(peer){try{peer.destroy()}catch(e){}}
     conns=[];status("Connecting…");
     var id="hwb-"+code,p=new Peer(id);peer=p;p.hosting=true;
     p.on("open",update);
@@ -791,6 +794,34 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor
   var extras=["line","text","stamp","ptr","clear","prev","pgl","next","addp","photo","bg","save","starsb","musicb","games","whoami","mic","room"];
   extras.forEach(function(id){more.appendChild($(id))});bar.appendChild(more);
   mk(bar,"More tools ▾",function(){more.hidden=!more.hidden;fit()});
+
+  function videoLayout(){var dock=$("videoDock");dock.style.display=(camera||Object.keys(videoTiles).length)?"block":"none"}
+  function removeVideo(id,call){var entry=videoTiles[id];if(entry&&(!call||entry.call===call)){entry.el.remove();delete videoTiles[id]}videoLayout()}
+  function bindVideo(call){
+    if(!call)return;videoCalls.push(call);
+    call.on("stream",function(st){
+      removeVideo(call.peer);var tile=document.createElement("div");tile.className="videoTile";var name=document.createElement("div");name.className="videoName";var conn=conns.find(function(c){return c.peer===call.peer});name.textContent=conn&&conn.person?conn.person:"Family";tile.appendChild(name);
+      var v=document.createElement("video");v.autoplay=true;v.playsInline=true;v.muted=true;v.srcObject=st;tile.appendChild(v);$("remoteVideos").appendChild(tile);videoTiles[call.peer]={el:tile,call:call};videoLayout();var play=v.play();if(play&&play.catch)play.catch(function(){name.textContent+=" · tap video to play";v.onclick=function(){v.play()}});
+    });
+    function ended(){removeVideo(call.peer,call);videoCalls=videoCalls.filter(function(c){return c!==call})}
+    call.on("close",ended);call.on("error",ended);
+  }
+  function callVideo(id){if(camera&&peer){var c=peer.call(id,camera,{metadata:{kind:"video"}});if(c){c.localCameraCall=true;bindVideo(c)}}}
+  function stopCamera(){
+    if(camera)camera.getTracks().forEach(function(t){t.stop()});camera=null;$("localVideo").srcObject=null;$("localTile").hidden=true;
+    videoCalls.slice().forEach(function(c){if(c.localCameraCall)c.close()});videoCalls=videoCalls.filter(function(c){return !c.localCameraCall});$("cameraBtn").textContent="Camera off";$("cameraBtn").setAttribute("aria-pressed","false");send("videostate",false);videoLayout();
+  }
+  async function toggleCamera(){
+    if(cameraBusy)return;if(camera){stopCamera();return}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert("Camera access needs this page opened on HTTPS in a supported browser.");return}
+    cameraBusy=true;$("cameraBtn").textContent="Opening camera…";
+    try{camera=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},frameRate:{ideal:15,max:24},facingMode:"user"},audio:false});$("localVideo").srcObject=camera;$("localTile").hidden=false;$("cameraBtn").textContent="Camera on";$("cameraBtn").setAttribute("aria-pressed","true");camera.getVideoTracks()[0].onended=stopCamera;send("videostate",true);conns.forEach(function(c){callVideo(c.peer)});videoLayout()}
+    catch(e){$("cameraBtn").textContent="Camera off";alert(e.name==="NotAllowedError"?"Camera permission was blocked. Allow camera access in this browser, then try again.":"Could not open the camera. Check that it is connected and not being used by another app.")}
+    finally{cameraBusy=false}
+  }
+  var cameraButton=mk(bar,"Camera off",toggleCamera);cameraButton.id="cameraBtn";cameraButton.setAttribute("aria-pressed","false");
+  $("videoMin").onclick=function(){var dock=$("videoDock");dock.classList.toggle("compact");this.textContent=dock.classList.contains("compact")?"+":"−"};
+  window.addEventListener("pagehide",function(){if(camera)camera.getTracks().forEach(function(t){t.stop()})});
   mk(bar,"Homework",showTasks);
   mk(more,"Follow shared page",function(){if(!pl||!pl.p){alert("Dad controls shared page following.");return}follow=!follow;this.textContent=follow?"Follow shared page":"Browse independently";send("follow",follow);dirty=true});
   mk(more,"Export session",function(){closeText();var blob=new Blob([JSON.stringify({format:"ETM-2",s:strokes,p:info(),pg:pg,deleted:deleted,cleared:cleared,clock:clock,tasks:tasks})],{type:"application/json"});var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="ETM-session-"+new Date().toISOString().slice(0,10)+".json";a.click();setTimeout(function(){URL.revokeObjectURL(u)},2000)});
