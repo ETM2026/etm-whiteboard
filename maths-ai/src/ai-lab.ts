@@ -1,5 +1,5 @@
 import type {EtmEnv} from './etm-service';
-import {reserve,openAIError,rejectedBeforeGeneration,vision} from './maths-tutor';
+import {reserve,openAIError,rejectedBeforeGeneration,vision,checkScan} from './maths-tutor';
 import {TOPICS,topicValid,question,publicQuestion,type Topic} from './maths-core';
 type Obj=Record<string,any>;
 const fail=(message:string,status=400):never=>{throw Object.assign(Error(message),{status});};
@@ -67,10 +67,10 @@ export async function handleLab(req:Request,env:EtmEnv,s:Obj,path:string){
  if(['lab-maths-scan','lab-maths-working','lab-piano-score','lab-piano-plan'].includes(path)&&d.adultOnly!==true)fail('Confirm this is your own adult test material, with no child work or personal details.');
  if(path==='lab-maths-scan'){
   validateJpeg(d.image);await limited(env);const r=await vision(env,d.image,'scan',undefined,true);
-  if(r.clear!==true||!Array.isArray(r.topics)||!r.topics.length||r.topics.some((t:any)=>!topicValid(t))||!Array.isArray(r.numbers)||r.numbers.some((n:any)=>!integer(n,0,100000)))fail('I cannot read a supported maths topic. Try a clearer crop.',422);
+  checkScan(r);
   const topics=[...new Set<Topic>(r.topics)],exercises=Array.isArray(r.exercises)?r.exercises.filter((e:any)=>topicValid(e?.topic)&&integer(e.a,0,100000)&&integer(e.b,0,100000)).slice(0,100).map((e:any)=>({topic:e.topic,a:e.a,b:e.b})):[];
   const id='lab-maths:'+crypto.randomUUID();await env.DB.prepare('INSERT INTO tutor_practice (id,revision,at,body) VALUES (?,0,?,?)').bind(id,Date.now(),JSON.stringify({owner:'lab-maths',topics,exercises})).run();
-  return json({id,topics:topics.map(id=>({id,name:TOPICS[id].name,stages:TOPICS[id].stages})),reviewRequired:true});
+  return json({id,topics:topics.map(id=>({id,name:TOPICS[id].name,stages:TOPICS[id].stages})),reviewRequired:true,...(r.reason==='partial'?{partial:true}:{})});
  }
  if(['lab-maths-hint','lab-maths-working','lab-maths-start'].includes(path)){
   const h=await sheet(env,d.sheet);if(!topicValid(d.topic)||!h.topics.includes(d.topic))fail('Select a recognised skill from the scan.');

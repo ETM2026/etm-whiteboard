@@ -9,3 +9,5 @@
 .lAnswers>.lAnswer:last-child:nth-child(3){grid-column:1/-1}.lEqualGroups{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}.lCounterGroup{padding:20px;border:2px solid #87a995;border-radius:24px;background:#fff;color:#b87c52}.lTeamStars{text-align:center!important;color:#8b6c30;font-weight:700}
 
 .lCounting{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;padding:30px}.lCounting span{font-size:45px;color:#d9926c}
+
+.learningV2 .lPlayHeading{font-size:23px;margin:32px 0 10px}.learningV2 .lPlayHeading+.lIntro{font-size:14px;line-height:1.7}

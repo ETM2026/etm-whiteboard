@@ -23,6 +23,15 @@ try{
  assert.equal((await call('lab-maths-scan',{image:'data:image/jpeg;base64,a',adultOnly:true})).status,400);
  responses.push({clear:true,topics:['add','sub'],numbers:[47,26,62,18],exercises:[{topic:'add',a:47,b:26},{topic:'sub',a:62,b:18}],answer:73,secretName:'Do not return'});
  const scan=await result('lab-maths-scan',{image:jpeg,adultOnly:true});assert.deepEqual(Object.keys(scan).sort(),['id','reviewRequired','topics']);assert.ok(!JSON.stringify(scan).includes('73'));assert.ok(!JSON.stringify(scan).includes('Do not return'));
+ // Readable supported questions survive an otherwise unsupported mixed worksheet.
+ assert.equal(requests.at(-1).input[0].content[1].detail,'high');
+ assert.ok(requests.at(-1).instructions.includes('unsupported questions'));
+ responses.push({clear:true,reason:'partial',topics:['sub','fraction'],numbers:[75,28,3,4],exercises:[{topic:'sub',a:75,b:28}]});
+ const mixed=await result('lab-maths-scan',{image:jpeg,adultOnly:true});assert.equal(mixed.partial,true);assert.deepEqual(mixed.topics.map(t=>t.id),['sub','fraction']);assert.equal(mixed.numbers,undefined);assert.equal(mixed.exercises,undefined);
+ for(const [reason,message] of [['unsupported',/not supported yet/],['unclear',/too small or unclear/],['privacy',/personal information/]]){
+  responses.push({clear:false,reason,topics:[],numbers:[],exercises:[]});const rejected=await call('lab-maths-scan',{image:jpeg,adultOnly:true});assert.equal(rejected.status,422);assert.match((await rejected.json()).error,message);
+ }
+ responses.push({clear:true,reason:'supported',topics:['sub'],numbers:['invalid'],exercises:[]});const invalid=await call('lab-maths-scan',{image:jpeg,adultOnly:true});assert.equal(invalid.status,422);assert.match((await invalid.json()).error,/incomplete classification/);
  const hint=await result('lab-maths-hint',{sheet:scan.id,topic:'add',step:0});assert.ok(!/\d/.test(hint.hint));
  responses.push({observation:'The answer is 73'});const working=await result('lab-maths-working',{sheet:scan.id,topic:'add',image:jpeg,adultOnly:true});assert.ok(!working.hint.includes('73'));
  assert.equal((await call('lab-maths-start',{sheet:'child-homework',topic:'add',level:0})).status,403);
