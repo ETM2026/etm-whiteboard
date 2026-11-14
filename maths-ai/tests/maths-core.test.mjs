@@ -12,3 +12,4 @@ for(let n=0;n<200;n++){const q=question('add',0,[],[{topic:'add',a:12,b:4},{topi
 const now=Date.now();const rows=Array.from({length:6},(_,i)=>({topic:'add',level:0,correct:1,independent:1,at:now}));assert.equal(skillSummary(rows)[0].levels[0].secure,false);rows[0].at-=86400000;assert.equal(skillSummary(rows)[0].levels[0].secure,true);rows[0].independent=0;assert.equal(skillSummary(rows)[0].levels[0].secure,false);
 for(const t of Object.values(TOPICS))for(const hint of t.hints)assert.ok(!/\d|=/.test(hint));
 console.log('PASS 1,050 generated questions: arithmetic, answer privacy, homework-number exclusion; multi-day mastery and controlled hints.');
+

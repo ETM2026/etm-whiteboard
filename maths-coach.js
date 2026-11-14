@@ -82,7 +82,3 @@ var tutorConnectParent=parentRoom;parentRoom=function(){tutorConnectParent();if(
   var tutorDadTestParent=parentRoom;parentRoom=function(){tutorDadTestParent();if(tutorDad()){var grid=club.querySelector('.activityGrid');if(grid)actionCard(grid,'🧪','Dad’s AI test','Try generated questions with real AI marking','sky',tutorDadTest)}};
 
 
-// Optional full Dad test suite. The main app and existing maths coach remain usable if it cannot load.
-if(typeof fetch==='function')fetch('ai-lab.js',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('AI lab unavailable');return r.text()}).then(function(source){eval(source);if(typeof dadUnlocked==='function'&&dadUnlocked()&&typeof document!=='undefined'&&document.body.dataset.view==='parent')parentRoom()}).catch(function(){console.warn('ETM full AI test lab did not load. Refresh after the update finishes.');});
-
-if(typeof fetch==='function')fetch('question-controls.js',{cache:'no-cache'}).then(function(r){if(!r.ok)throw Error('Question controls unavailable');return r.text()}).then(function(source){eval(source)}).catch(function(){console.warn('ETM question controls did not load. Refresh after updating.');});

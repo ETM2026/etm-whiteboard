@@ -14,3 +14,4 @@ assert.equal((await call('config',await p('config','Dad','dad',{enabled:true,lim
 const manual=await (await call('manual',await p('manual','Emily','child',{topic:'add'}))).json();const start=await (await call('start',await p('start','Emily','child',{topic:'add',homework:manual.id}))).json();assert.equal(start.question.answer,undefined);
 const marked=await call('answer',await p('answer','Emily','child',{id:start.id,answer:'1',confidence:'sure'}));assert.equal(marked.status,503);assert.equal((await db.prepare('SELECT count(*) AS n FROM tutor_results').first()).n,0);
 console.log('PASS Worker end-to-end: enrollment, CORS, signed roles, replay protection, parent-only configuration, answer privacy and no silent local grading when AI is unavailable.');}finally{await mf.dispose()}
+

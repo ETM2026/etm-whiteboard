@@ -8,3 +8,11 @@
 .questionDock{align-items:center;gap:16px}.questionDockFeedback{font-size:14px;line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#294a3e}.questionDockFeedback[hidden]{display:none}@media(max-width:650px){.questionDock{flex-wrap:wrap;gap:7px}.questionDockFeedback{flex-basis:100%;font-size:13px}.hasQuestionDock{padding-bottom:150px!important}}
 
 .questionDockSource{display:none!important}
+
+/* Whiteboard-wide canvas rules must not position photo previews over the form. */
+.tutorArea canvas.tutorPhotoCanvas{position:static;inset:auto;display:block;width:auto;height:auto;max-width:100%;max-height:430px;margin:18px auto;transform:none;cursor:default;touch-action:auto}
+.tutorArea .tutorCrop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:100%;clear:both;margin:18px 0}
+.tutorArea .tutorCrop label{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tutorArea .tutorCrop input[type=range]{display:block;width:100%;box-sizing:border-box;margin:0}
+.tutorArea .tutorPad canvas{position:static;inset:auto;display:block;width:100%;height:auto;transform:none}
+@media(max-width:550px){.tutorArea .tutorCrop{grid-template-columns:1fr}.tutorArea canvas.tutorPhotoCanvas{max-height:360px}}

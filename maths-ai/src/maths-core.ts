@@ -39,3 +39,4 @@ export function skillSummary(rows:any[]){return Object.keys(TOPICS).map(t=>{
  return {level,attempts:rs.length,independent:ind.length,hints:rs.filter(r=>r.hinted).length,retries:rs.filter(r=>r.retried).length,guessed:rs.filter(r=>r.confidence==='guess').length,secure,due:!!last&&Date.now()-last>3*86400000,last};});
  const first=levels.find(x=>!x.secure);return {topic:t,name:TOPICS[t as Topic].name,levels,recommendedLevel:first?.level??2,next:first?TOPICS[t as Topic].stages[first.level]:TOPICS[TOPICS[t as Topic].next as Topic].name};
 });}
+

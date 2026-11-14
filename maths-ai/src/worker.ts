@@ -22,6 +22,8 @@ export default {async fetch(req:Request,env:EtmEnv):Promise<Response>{
  return Response.json({saved:true},{headers});
  }
  const s=await authenticate(env.DB,packet,path);
+ const feature=path.includes('piano')?5:path.includes('quiz')?6:['scan','working','answer','dad-test-answer','lab-maths-scan','lab-maths-working'].includes(path)?4:0;
+ if(feature){const setting:any=await env.DB.prepare('SELECT enabled FROM tutor_config WHERE id=?').bind(feature).first();if(setting&&setting.enabled===0)reject('This AI feature is switched off by Dad. Use standard learning.',409);}
  const get=path==='status';const inner=new Request('https://etm.internal/'+path,{method:get?'GET':'POST',headers:{'Content-Type':'application/json'},body:get?undefined:JSON.stringify(packet.body.data||{})});
  const r=path.startsWith('lab-')?await handleLab(inner,env,s,path):await handleTutor(inner,env as any,s,path);return new Response(r.body,{status:r.status,headers});
  }catch(e:any){return Response.json({error:e.status?e.message:'The tutor could not finish. Please try again.'},{status:e.status||500,headers});}

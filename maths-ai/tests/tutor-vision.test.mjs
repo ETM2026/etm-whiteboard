@@ -31,3 +31,4 @@ assert.equal(await db.prepare('SELECT body FROM tutor_results WHERE id=?').bind(
 mock.get('https://api.openai.com').intercept({path:'/v1/responses',method:'POST'}).reply(500,'upstream');r=await call('scan',{image:jpeg});assert.equal(r.status,502);const usage=await db.prepare('SELECT * FROM tutor_usage').first();assert.equal(usage.reserved,0);assert.equal(usage.spent,1012000);
 console.log('PASS Mocked vision: topic confirmation, model-answer suppression, unknown observation fallback, JPEG bounds, exact usage settlement and conservative failures.');
 }finally{await mf.dispose()}
+
