@@ -1,0 +1,8 @@
+{
+  "name":"etm-maths-ai",
+  "main":"src/worker.ts",
+  "compatibility_date":"2026-11-01",
+  "workers_dev":true,
+  "vars":{"ETM_ALLOWED_ORIGIN":"https://etm2026.github.io","ETM_AI_ZDR_CONFIRMED":"false"},
+  "d1_databases":[{"binding":"DB","database_name":"etm-maths","database_id":"REPLACE_WITH_YOUR_D1_DATABASE_ID","migrations_dir":"migrations"}]
+}
