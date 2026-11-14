@@ -1,52 +1,74 @@
-# ETM Learning Upgrade
+# ETM Simplified Update
 
-Built for easy use, short sessions and enjoyable discovery. This package is ready to upload; it has not been published to your live app.
+This is the next combined version of ETM. It replaces the overlapping menus while retaining the working games, teaching activities, original records and AI-off learning. It is ready to upload; it has not been published to the live app.
 
-## Latest revision: games and photo scanning
+## Install
 
-Home → Play together now opens Games & competitions: Family quiz, Matching pairs, Board games & adventures, Maths Sprint, Times Tables Rally, Note Race and Music Quiz Race. Original game logic and scores are retained. Maths/music races connect devices through Together; the family quiz uses one device and Times Tables Rally also offers taking turns.
+1. Download and extract ETM_Simplified_Update.zip.
+2. In GitHub, open ETM2026/etm-whiteboard, main branch.
+3. Choose Add file → Upload files. Upload all extracted contents to the repository root, including the maths-ai and tests folders. Do not upload the ZIP or an extra enclosing folder.
+4. Commit. Wait for both GitHub Pages and the Cloudflare Worker build to finish.
+5. Refresh ETM. On Windows, Ctrl+Shift+R reloads the latest files. On a tablet, close and reopen the tab if the old menu remains.
 
-Maths photo analysis now uses high image detail and classifies mixed worksheets question by question. Readable supported skills can be accepted even when other questions are unsupported. A partial scan explains that some questions were skipped. Unsupported topics, unclear text, privacy blocks and incomplete AI responses have different messages. Shape, symmetry, weight, money and tally charts have not been added as new coached skills. No worksheet answers are returned.
+No new account, API key, database migration or Wrangler configuration change is needed. The package leaves maths-ai-config.js, Cloudflare secrets and your database configuration in place. Download a family backup from the existing app before installing.
 
-## Install the combined update
+## The new structure
 
-1. Download and extract ETM_Learning_Upgrade.zip.
-2. Open ETM2026/etm-whiteboard on GitHub and select the main branch.
-3. Choose Add file → Upload files. Drag the extracted contents into the repository root. Include the maths-ai and tests folders, not just the loose files. Do not upload the ZIP or an extra enclosing folder.
-4. Commit the upload. Wait for the GitHub Pages deployment and the Cloudflare Worker build to finish successfully.
-5. Open your usual ETM app and refresh the page. If an old layout remains, use Ctrl+Shift+R on a computer or close and reopen the browser tab on your phone.
+Home has six choices: Maths, Reading, Music, Geography, Science, and Games & competitions. Draw, My progress and More sit below them. Dad has one Dad’s space link.
 
-Your existing maths-ai-config.js, Cloudflare secrets, Wrangler database configuration, family accounts and artwork stay in place. No database migration, new API key or new account is required. The master AI switch requires the updated Worker as well as the updated frontend.
+Maths:
+- Learn & practise: one skill/stage setup and one three-question screen, with original number ranges, optional columns and word problems. Counting, addition, subtraction, mixed sums, division, number bonds, fractions, time, money, shapes and place value remain available. Required diagrams appear with the question. Visual hints and a drawing pad remain available.
+- Times tables: the existing Learn it, Practise it and Rally activities, with their saved facts and levels.
+- Homework helper: one destination for method hints and separate practice. It does not accept or solve the child’s original homework answer. Emily’s photo option appears only when her existing permissions and privacy setup allow it.
+- Practise with Dad: Dad’s original shared questions, invitations and Maths Board.
 
-## Try it in this order
+Games & competitions:
+- Family quiz, Matching pairs, X and O’s, Connect four.
+- Maths Sprint, Times Tables Rally, Note Race, Music Quiz Race.
+- Guess the word, Treasure voyage and Draw & guess under More playful adventures.
+- Family quiz contains Play a quiz, Make a question and Saved questions. Existing family-authored questions are retained. Dad can also generate and review an optional AI draft. Reviewed AI test drafts remain Dad-only.
 
-1. Sign in as Dad and download a family backup using Dad’s space → Family backup before the children start.
-2. Open Dad’s space → Learning & AI. Review each child’s starting stage. These are starting points, not school grades.
-3. Turn AI enhancements off and save. Return home and try today’s adventure, Geography, Science, Maths and Play together. These standard activities do not need OpenAI or API credit.
-4. Open Play together → Family quiz, then select a topic and stage for each player. Try Friendly competition and Team adventure. Each player gets three turns and the same points per correct answer, without a speed bonus.
-5. Answer a practice question, try the help option and move to the next question. There should be one main Check/Next action, kept within reach at the bottom of the screen.
-6. When wanted, return to Dad’s controls and turn optional AI back on. Test with Dad’s own or synthetic material in the AI studio: maths photos, piano exercises and reviewed quiz drafts. The shared spending allowance still applies.
+Music:
+- Notes & theory, Listening & rhythm, Scales, My pieces.
+- One Add a piece screen for file import and standard photo/PDF scanning. Dad’s optional adult AI scan appears there only when enabled. Every scan still requires review.
+- Race together opens the same Games & competitions destination.
+- Saved pieces, MIDI/keyboard practice, falling notes, RIAM settings and original exercises remain available.
 
-## What is included
+My progress:
+- One destination for the child’s current practice, times-table facts and original recorded music/reading/game sessions.
+- Emily’s saved AI check-ups load in a separate labelled section when connected.
+- Practice answers, helped answers, recorded sessions, coins and game scores are not merged into an artificial combined grade.
+- Only Dad can select a different family member’s progress. Guest practice remains temporary.
+- New practice history remains local to the device and is included in family backups. This update does not add automatic cross-device sync.
+- Private star charts remain separate in Dad’s Family settings.
 
-- A simpler six-subject home, with one suggested short daily adventure.
-- Geography: continents, oceans, map directions and world journeys.
-- Science: day and night, the water cycle, forces, plants, magnets, floating and sinking.
-- Ten starter units with interactive teaching models and 90 questions across three stages. This is a starter learning collection, not a complete school curriculum. Simplified models are labelled.
-- Freshly generated arithmetic, visual number models and local homework strategy hints.
-- Forty-eight additional built-in quiz questions covering animals, dinosaurs, music, space, art, building and familiar game interests. A finite bank can repeat on later games.
-- A suggested learning path that revisits tricky ideas and adapts across sessions using independent answers. Helped answers are recorded separately. Existing Reading and Music activities remain available.
-- One real action button in the question dock, rather than duplicated copies. Feedback appears once.
-- Dad’s server-enforced master AI switch plus individual Maths, Piano and Quiz switches. Turning AI off blocks new provider requests; it cannot cancel a request already sent. The standard activities remain usable.
-- Learning history is saved on the current device for family profiles and included in family backup exports/imports. It is not automatically synchronised between devices. Guest practice is temporary. Download regular backups.
-- Optional read-aloud using the device’s available speech voices.
+Dad’s space:
+- Learning & progress: starting stages, read-aloud, progress, music levels, school words and optional weekly tasks.
+- AI & spending: master AI switch, feature switches, one shared allowance, Emily’s separate privacy-gated permission, and backend connection.
+- Family settings: PINs, invitations, private goals, usage, result corrections, messages, camera and sound.
+- Backup & restore: one place to export or restore.
+- Advanced adult AI tests are collapsed below the main cards. Their results remain separate from child progress.
 
-## Child AI remains separately controlled
+More contains story creation, Santa’s List and messages. Chat and Together remain in the header.
 
-Leave ETM_AI_ZDR_CONFIRMED=false while the OpenAI privacy request is pending. The new switches do not grant child AI access or override the existing privacy gate. Use only Dad’s own or synthetic material in adult AI tests. Never paste an API key into the frontend or GitHub.
+## First checks after installing
 
-## Validation
+1. As Dad, open Dad’s space → AI & spending. Turn AI enhancements off and save. Confirm standard Maths, Geography, Science and games still run.
+2. Open Maths → Learn & practise. Try a clock/fraction question and an addition question with Column sums. Check that the picture/columns appear. Use Help me think and Show your thinking.
+3. Open Games & competitions. Each named game/race should appear once. Connect devices through Together for connected races; Times Tables Rally also supports taking turns on one device.
+4. Open My progress. Check older game/music results and times-table facts as well as new practice. As Dad, select a child; as a child, only their own progress is shown.
+5. Open Music → My pieces. Check existing saved pieces and Add a piece. Standard scanning and import do not need AI.
+6. Open Family quiz → Saved questions and check your existing authored questions.
+7. If you want to test AI, re-enable it as Dad. Use only your own or synthetic material in Advanced adult AI tests while child-data approval is pending.
 
-The standard engine and client checks passed, including a complete lesson and maths practice without AI, nine-turn family quizzes, progression and backup handling. Backend type checks, the full test suite and a production build dry run passed. AI switch tests use mocked provider responses; this verification did not spend API credit. Earlier browser checks covered the real home, science lesson, geography map and family quiz, including single-button progression. This revision adds route checks for every game/race card and mocked mixed-worksheet/error-reason checks. A browser-policy restriction blocked the final preview refresh, so this revision has not had a fresh visual check or a live provider scan of your photograph.
+The mixed-worksheet scanner improvements from the previous package are included: higher image detail, acceptance of readable supported topics on mixed pages, and separate messages for unsupported, unclear, privacy-blocked and incomplete scans. This does not add shape, symmetry, money, weight or tally charts as new AI-coached skills.
 
-For a developer: run `node tests/learning-core.test.mjs` and `node tests/learning-client.test.mjs` from the repository root. In maths-ai, run `npm ci`, `npm run check`, `npm test` and `npm run build`. The build command is a dry run, not a deployment.
+## Validation and limits
+
+Automated checks cover all original maths skill families in the consolidated question screen, distinct answer choices, column visuals, single game routes, child progress isolation, daily lessons, nine-turn quizzes, AI switches and backup merge/restore. The backend type check, full test suite and production-build dry run passed. AI tests use mocked responses and do not spend API credit.
+
+The final visual/browser check remains unavailable because the preview browser previously blocked refreshing the local preview. There has been no live AI rescan of your photograph. Use the first-check list above after upload.
+
+No saved learning data, pieces, family questions, coins, private goals or PINs are deliberately deleted or reset by this update. Keep regular backups, especially before moving between devices. Adult AI drafts continue to use their existing device-local test storage.
+
+Developer checks: from the repository root, run node tests/learning-core.test.mjs and node tests/learning-client.test.mjs. In maths-ai, run npm ci, npm run check, npm test and npm run build. The build command is a dry run and does not deploy.
