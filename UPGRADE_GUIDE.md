@@ -1,10 +1,34 @@
-# ETM Simplified Update
+# ETM Piano & Play Update
 
 This is the next combined version of ETM. It replaces the overlapping menus while retaining the working games, teaching activities, original records and AI-off learning. It is ready to upload; it has not been published to the live app.
 
+
+## New in this build
+
+- Emily’s addition and subtraction practice now shows the question beside properly aligned column working by default, including blank carry/exchange boxes. Other profiles retain their simpler view unless Column sums is selected. Daily maths practice uses the same Emily column layout.
+- Find the note briefly highlights a correct answer, then advances automatically after 550 ms. Wrong answers stay on the same question. Screen taps and MIDI use the same check. Other quizzes still use their normal Next control.
+- Scale completion shows completed steps, first-try steps and detected wrong notes. It no longer calls a retried scale perfect. The coin is for completing practice, not a perfect performance. Timing, fingering and technique are not assessed by this scale exercise. This affects new results; old records are retained.
+- Piano playback uses 30 packaged Salamander acoustic-grand-piano recordings with pitch-adjusted sampling, rather than the old triangle-wave tone. Scale and piece Listen controls preload their samples. Files load from ETM itself, with no AI cost or third-party sound-service account. A simple fallback tone remains if samples are unavailable. Include the entire assets/piano folder when uploading.
+- Piece practice exposes hand, speed and bar selection. Advanced tools include looping, metronome and other-hand accompaniment. Accompaniment works in Keep the beat mode with one hand selected and requires correct hand assignments in the imported score. A clean timed run below full speed offers Try a little faster. Wait for me still checks pitches without assessing timing.
+- Checkers adds a tactile wooden board, large pieces, legal-move highlights, compulsory captures, multi-jumps, kings, blocked wins and claimable draws. Rules are English-style draughts, with forward captures for men.
+- Colour Clash adds original ETM card artwork and classic UNO-style gameplay: seven cards, colour/number/symbol matching, Skip, Reverse, +2, Wild, +4 and challenges, a ONE call/catch penalty, no stacking, reshuffling and scoring. Choose one round or a full 500-point match. Simple mode is a clearly labelled numbers-and-Wilds teaching variant. Classic reference: https://service.mattel.com/instruction_sheets/uno%20basic%20is.pdf
+- Both new games use ONE device in this build. Colour Clash hides hands behind a pass-screen cover between players. Challenge hand disclosures are shown to the challenger, with a Hide hand & continue action. Game state is temporary in the open tab; Continue appears on Games & competitions while that game remains in memory. These games do not create learning results or spend API credit. The existing connected races remain available.
+
+Current-lesson importing and teacher-instruction integration are deferred, as requested. Existing file imports remain available.
+
+## Quick checks for the new features
+
+1. Open Emily → Maths → Learn & practise and choose addition or subtraction. Check the columns and carry boxes, then answer using the large choices. Test Show your thinking and the single Next action.
+2. Open Music → Notes & theory → Find the note. A correct answer should advance automatically; a wrong answer should wait.
+3. Play a scale with a deliberately wrong received MIDI note, then complete it. Its result must show that wrong note. Playing only the provided correct screen keys cannot reveal mistakes made on an unconnected physical instrument.
+4. In a saved piece, select one hand and Keep the beat; enable Play the other hand in Advanced practice tools. Use Listen to hear the sampled piano. Check the score’s hand assignment if accompaniment is missing or wrong.
+5. Open Games & competitions → Checkers. Try a capture and a king. Open Colour Clash with two or three different names and check each pass-screen cover before revealing a hand.
+
+Piano sample credit: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0. MP3 distribution from Tone.js. Attribution and source links are in Music → Piano sound and assets/piano/README.txt.
+
 ## Install
 
-1. Download and extract ETM_Simplified_Update.zip.
+1. Download and extract ETM_Piano_and_Play_Update.zip.
 2. In GitHub, open ETM2026/etm-whiteboard, main branch.
 3. Choose Add file → Upload files. Upload all extracted contents to the repository root, including the maths-ai and tests folders. Do not upload the ZIP or an extra enclosing folder.
 4. Commit. Wait for both GitHub Pages and the Cloudflare Worker build to finish.
@@ -67,8 +91,10 @@ The mixed-worksheet scanner improvements from the previous package are included:
 
 Automated checks cover all original maths skill families in the consolidated question screen, distinct answer choices, column visuals, single game routes, child progress isolation, daily lessons, nine-turn quizzes, AI switches and backup merge/restore. The backend type check, full test suite and production-build dry run passed. AI tests use mocked responses and do not spend API credit.
 
+New automated tests also cover Checkers, five full simulated card rounds, card conservation, +4 challenges, private-hand screens, music auto-progression guards, truthful scale records, accompaniment and sampled-audio preloading. All 30 MP3 files decode successfully. Listening quality and USB-piano behaviour have not been verified on your physical devices.
+
 The final visual/browser check remains unavailable because the preview browser previously blocked refreshing the local preview. There has been no live AI rescan of your photograph. Use the first-check list above after upload.
 
 No saved learning data, pieces, family questions, coins, private goals or PINs are deliberately deleted or reset by this update. Keep regular backups, especially before moving between devices. Adult AI drafts continue to use their existing device-local test storage.
 
-Developer checks: from the repository root, run node tests/learning-core.test.mjs and node tests/learning-client.test.mjs. In maths-ai, run npm ci, npm run check, npm test and npm run build. The build command is a dry run and does not deploy.
+Developer checks: from the repository root, run node tests/learning-core.test.mjs and node tests/learning-client.test.mjs. Also run node tests/family-games.test.mjs, node tests/music-improvements.test.mjs and node tests/piano-audio.test.mjs. In maths-ai, run npm ci, npm run check, npm test and npm run build. The build command is a dry run and does not deploy.
