@@ -1,4 +1,5 @@
 import {handleTutor} from './maths-tutor';
+import {handleLab} from './ai-lab';
 import {authenticate,publicDirectory,verify,reject,canonical} from './access';
 import type {EtmEnv} from './etm-service';
 export default {async fetch(req:Request,env:EtmEnv):Promise<Response>{
@@ -22,6 +23,7 @@ export default {async fetch(req:Request,env:EtmEnv):Promise<Response>{
  }
  const s=await authenticate(env.DB,packet,path);
  const get=path==='status';const inner=new Request('https://etm.internal/'+path,{method:get?'GET':'POST',headers:{'Content-Type':'application/json'},body:get?undefined:JSON.stringify(packet.body.data||{})});
- const r=await handleTutor(inner,env as any,s,path);return new Response(r.body,{status:r.status,headers});
+ const r=path.startsWith('lab-')?await handleLab(inner,env,s,path):await handleTutor(inner,env as any,s,path);return new Response(r.body,{status:r.status,headers});
  }catch(e:any){return Response.json({error:e.status?e.message:'The tutor could not finish. Please try again.'},{status:e.status||500,headers});}
 }};
+
