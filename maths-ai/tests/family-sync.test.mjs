@@ -4,6 +4,24 @@ try{const db=await mf.getD1Database('DB');for(const f of readdirSync('migrations
 const pair=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']),pub=await crypto.subtle.exportKey('jwk',pair.publicKey);const d={family:'etmfamilytest',root:{pub,epoch:1},children:Object.fromEntries(['Emily','Tommy','Matthew'].map(n=>[n,{pub,epoch:1}]))};async function p(path,name,role,data={},extra={}){const body={path,name,role,epoch:1,family:d.family,at:Date.now(),nonce:crypto.randomUUID(),data,...extra};return {body,sig:Buffer.from(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},pair.privateKey,new TextEncoder().encode(canonical(body)))).toString('base64')}}
 const call=(path,packet,origin='https://etm2026.github.io')=>mf.dispatchFetch('https://backend.test/'+path,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(packet)});
 assert.equal((await call('enroll',await p('enroll','Dad','dad',d,{setupToken:'fixture-setup-code-not-an-openai-key'}))).status,200);
+
+const raw=crypto.getRandomValues(new Uint8Array(32)),iv=crypto.getRandomValues(new Uint8Array(12)),aad='fixture:Emily:1';
+const wrap=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['encrypt']);
+const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(aad)},wrap,new Uint8Array([1,2,3]));
+const b64=x=>Buffer.from(x).toString('base64');
+const manifest={family:d.family,revision:1,root:{pub,epoch:1},children:{Emily:{...d.children.Emily,salt:'salt',iv:b64(iv),aad,cipher:b64(cipher)},Tommy:d.children.Tommy,Matthew:d.children.Matthew}};
+const proof=Buffer.alloc(32,2).toString('base64url'),verifier=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(proof))).toString('base64url');
+const publication={visits:[{manifest,name:'Emily'}],salt:'s'.repeat(43),verifier,box:'sealed',revision:1};
+assert.equal((await call('home-publish',await p('home-publish','Emily','child',publication))).status,403);
+assert.equal((await call('home-publish',await p('home-publish','Dad','dad',publication))).status,200);
+assert.deepEqual(await (await call('visit-salt',{name:'Emily'})).json(),{salt:'salt'});
+assert.equal((await call('visit-open',{name:'Emily',key:b64(raw)})).status,200);
+assert.equal((await call('visit-open',{name:'Dad',key:b64(raw)})).status,400);
+for(let i=0;i<5;i++)assert.equal((await call('visit-open',{name:'Emily',key:b64(Buffer.alloc(32,7))})).status,401);
+assert.equal((await call('visit-open',{name:'Emily',key:b64(raw)})).status,429);
+assert.equal((await call('home-open',{proof:'x'.repeat(43)})).status,401);
+assert.deepEqual(await (await call('home-open',{proof})).json(),{box:'sealed'});
+console.log('PASS Central sign-in with D1, parent-only publication, child PIN protection and throttling.');
 const device=crypto.randomUUID(),sync=(writes=[],extra={})=>({protocol:2,device,member:'dad123',writes,messages:[],cursor:0,...extra}),item={owner:'Emily',collection:'pieces',id:'piece',version:0,value:{id:'piece',title:'Original',bars:[],events:[]}};
 let r=await call('family-sync',await p('family-sync','Dad','dad',sync([item])));assert.equal(r.status,200);assert.equal((await r.json()).accepted.length,1);
 r=await call('family-sync',await p('family-sync','Emily','child',sync()));assert.equal((await r.json()).records[0].version,1);

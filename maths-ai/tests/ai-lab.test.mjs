@@ -22,7 +22,7 @@ try{
  assert.equal((await call('lab-maths-scan',{image:jpeg})).status,400);
  assert.equal((await call('lab-maths-scan',{image:'data:image/jpeg;base64,a',adultOnly:true})).status,400);
  responses.push({clear:true,topics:['add','sub'],numbers:[47,26,62,18],exercises:[{topic:'add',a:47,b:26},{topic:'sub',a:62,b:18}],answer:73,secretName:'Do not return'});
- const scan=await result('lab-maths-scan',{image:jpeg,adultOnly:true});assert.deepEqual(Object.keys(scan).sort(),['id','reviewRequired','topics']);assert.ok(!JSON.stringify(scan).includes('73'));assert.ok(!JSON.stringify(scan).includes('Do not return'));
+ const scan=await result('lab-maths-scan',{image:jpeg,adultOnly:true});assert.deepEqual(Object.keys(scan).sort(),['id','reviewRequired','topics']);assert.match(scan.id,/^lab-maths:[a-f0-9-]{36}$/);assert.ok(!JSON.stringify(scan.topics).includes('73'));assert.ok(!JSON.stringify(scan).includes('Do not return'));
  // Readable supported questions survive an otherwise unsupported mixed worksheet.
  assert.equal(requests.at(-1).input[0].content[1].detail,'high');
  assert.ok(requests.at(-1).instructions.includes('unsupported questions'));

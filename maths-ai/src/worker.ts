@@ -1,3 +1,4 @@
+import {familyHome} from './family-home';
 import {handleFamilySync} from './family-sync';
 import {handleTutor} from './maths-tutor';
 import {handleLab} from './ai-lab';
@@ -14,6 +15,7 @@ export default {async fetch(req:Request,env:EtmEnv):Promise<Response>{
  const isSync=new URL(req.url).pathname==='/family-sync';
  const raw=await req.text();if(raw.length>(isSync?4000000:700000))reject('Choose a smaller photo.',413);let packet:any;try{packet=JSON.parse(raw);}catch{reject('Invalid request.',400);}
  const path=new URL(req.url).pathname.slice(1);
+ if(['home-status','home-open','home-publish','visit-salt','visit-open'].includes(path))return Response.json(await familyHome(env.DB,path,packet),{headers});
  if(path==='enroll'){
  const b=packet?.body;if(!b||b.path!==path||!Number.isFinite(b.at)||Math.abs(Date.now()-b.at)>60000)reject('Setup request expired.');
  const d=publicDirectory(b.data),old:any=await env.DB.prepare('SELECT * FROM ai_family WHERE id=1').first();
