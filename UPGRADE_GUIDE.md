@@ -1,127 +1,137 @@
-# ETM Piano Study Revision
+# ETM Screen Sharing Revision — 15 November 2026
 
-This is the next combined version of ETM. It replaces the overlapping menus while retaining the working games, teaching activities, original records and AI-off learning. It is ready to upload; it has not been published to the live app.
+This is a combined update to the existing GitHub/Cloudflare app. It is packaged for upload and has not been deployed to your live account.
 
+## New: Dad can request a screen share
 
-## New in this revision
+This build includes the previous Family Sync & Discovery revision and adds view-only screen sharing inside Together. No new account, API key, database migration or backend secret is required for ETM’s direct screen-share feature.
 
-- **Optional guided piano learning:** a panel beside the familiar Music activities. Dad starts with beginner foundations; children start at their existing music stage. Short original activities cover keyboard orientation, finger numbers, pulse, left hand, coordination and chords. Elementary through Grade 1 include reading, rhythm, listening, theory, technical work and original phrases. Grades 2–8 provide practice plans using the existing technical tools and your own scores, not complete higher-grade taught courses. Stage, syllabus and album year are selected separately for each profile. Completing an activity never awards an official RIAM grade or changes the selected grade automatically.
-- **Practice percentages:** new assessed sessions show the relevant percentage and counts. Maths distinguishes independent first answers from helped answers; note/theory practice counts first answers; scales count steps completed without a detected wrong note. Piece practice shows note accuracy, with a separate timing percentage in Keep the beat. Rhythm-only practice is labelled rhythm coverage and does not claim to check pitches. Comparable records use matching settings, including score content, bars, hands, speed, mode and visual/audio aids. Earlier results remain available; old percentages are not invented.
-- **Follow my place:** in Sheet music, the current bar is tinted, a vertical marker crosses both staves and Wait for me highlights the expected notes. A progress bar shows position through the selected passage, independently of the accuracy score. Bars move into view automatically (one at a time on narrow screens). Turn Follow my place off to browse with Previous/Next bars. Listening and timed practice follow the score clock; Wait for me follows the required notes.
-- **Tempo changes:** MusicXML and MIDI imports now retain written tempo changes. Dotted-quarter markings are converted correctly to quarter-note timing; compound metres use the appropriate pulse. Listening, the playhead, metronome and other-hand accompaniment share the tempo map. The speed percentage scales the whole piece. Advanced practice tools → Follow the score’s tempo changes can be switched off for one steady tempo. MIDI metre changes also retain their bar boundaries.
-- **My pieces library:** search titles, composers and arrangements; filter All, Practising, Favourites or Completed; sort by recently played, recently added or A–Z. Easy and harder arrangements group under a song title. Details & arrangements lets you correct the group, title, label and composer. Dad can copy an arrangement into another profile. Libraries remain separate by profile and part of the existing family backup.
+### First test on the Raspberry Pi or Windows
 
-These additions work without AI and do not spend API credit. Existing games, AI switches, piano recordings, pieces and saved records are retained. Teacher-lesson importing/synchronisation remains deferred.
+1. Update ALL devices to this version. Keep the same family invitation and existing PINs.
+2. Open ETM as Emily on the Pi/Windows desktop. Open ETM as Dad on your computer or phone. Wait for both devices to appear in Together.
+3. On Dad’s device, open Together → Share a screen → Request Emily’s screen. If the list was opened before Emily connected, choose Refresh devices.
+4. Emily sees an approval dialog. She chooses Choose screen & share. The browser then opens its own selection window.
+5. Choose Entire screen and confirm in that browser window. Choosing only an ETM tab shares only that tab; ETM cannot force or bypass the browser’s selection.
+6. Dad sees the selected screen in a floating viewer. Use Enlarge or Full screen for a larger view. On the Pi, switch to another program and confirm Dad can still see it. Keep the ETM tab open.
+7. Either person can stop through the ETM control. Emily can also use the browser’s Stop sharing control. Declining, cancelling the browser picker, switching profiles or leaving ETM stops/ends the session. An unanswered request expires after 90 seconds; a failed connection times out after 30 seconds. An established session stops if the other endpoint no longer sends authenticated heartbeats for 45 seconds.
 
-**Existing imported songs:** the older importer discarded tempo changes, so they cannot be recovered from an already-saved piece. Import the original MusicXML/MXL/MIDI file again to use its written changes; keep or remove the older arrangement as you prefer. Manually entered and scanned pieces continue with their reviewed tempo. The sheet view remains a simplified note guide, not a complete engraving with all rests, expression and fingering.
+The existing microphone controls remain available for conversation. This release shares video only, without system audio, remote mouse/keyboard control or recording. Camera calls keep their existing separate connection. Guests cannot request or receive these family screen shares. Only Dad can request a child’s screen, and the child must approve each session. Nothing is captured merely because Dad sends a request.
 
-## First checks after installing
+### Devices and connections
 
-1. Make a family backup before upload. After refresh, open Music and check the familiar free-practice activities and optional guided panel. Dad can start with Find your way around the keys.
-2. Finish a short practice with a deliberate wrong answer/note. Check the percentage and counts. Repeat with the same settings to see a comparison; change the speed or hand to start a separate comparison.
-3. Open a piece → Sheet music. Try Follow my place on and off, Wait for me, then Listen. Check the current bar, marker and progress bar. On a phone/tablet, check automatic bar changes.
-4. Reimport a source file containing tempo changes. Listen at 50%, then at written speed. Switch Follow the score’s tempo changes off and check the steady version.
-5. Open My pieces, search a title or composer, favourite an arrangement and change its practice status. Use Details & arrangements to put two versions under one song group. Check another profile still has its own library.
-6. Restore your backup only if needed. The update does not require a migration, new key or a settings reset.
+Desktop capture depends on the Raspberry Pi/Windows browser, operating-system support and screen-capture permissions. The Pi’s desktop capture service may need configuring. iPads/phones should not be assumed to support broadcasting their whole screen from a web page; unsupported browsers show an explanation rather than attempting camera capture. Dad’s device can view through WebRTC where supported, including mobile browsers, but the actual device still needs testing.
 
-## Validation for this revision
+ETM uses a separate WebRTC connection for screen video. Signed offers, answers, candidates and stop messages travel through the existing family connection/temporary message relay. The message relay does not carry screen pixels. The default connection uses a public Google STUN service to discover network routes. Screen video is encrypted in transit by WebRTC; it is not sent to OpenAI or saved in family storage. Connection metadata can pass through the existing short-lived signalling relay.
 
-All six frontend test files pass, including timing-map inversion at four practice speeds, dotted 6/8 count-in/pulse, MusicXML/MIDI tempo imports, MIDI metre changes, score marker/highlights, matching comparisons, backup merging, library grouping/filtering, guided routing and profile isolation. Existing learning, games and sampled-audio tests pass. The full backend suite, TypeScript check and production-build dry run pass; no live provider requests were made.
+There is no configured TURN video relay in this package. Some home/mobile/work networks will prevent a direct media connection even when family sync works. ETM reports the failure rather than pretending sharing succeeded. The network and capture compatibility of your actual Pi have not been verified here.
 
-A fresh browser visual check could not be completed because the preview browser blocked refreshing the local preview. USB-piano behaviour and listening quality still need checking on your devices. The automated XML import checks use a DOM fixture; test your actual source files using the checklist above.
+### Raspberry Pi Connect for desktop control or a blocked direct connection
 
-## Retained from the previous build
+Together includes links to Raspberry Pi Connect and its official setup instructions. This is a separate remote-desktop service, not an embedded ETM feature. It provides desktop viewing and mouse/keyboard control through its own account and permissions. ETM does not install it or sign you in.
 
-- Emily’s addition and subtraction practice now shows the question beside properly aligned column working by default, including blank carry/exchange boxes. Other profiles retain their simpler view unless Column sums is selected. Daily maths practice uses the same Emily column layout.
-- Find the note briefly highlights a correct answer, then advances automatically after 550 ms. Wrong answers stay on the same question. Screen taps and MIDI use the same check. Other quizzes still use their normal Next control.
-- Scale completion shows completed steps, first-try steps and detected wrong notes. It no longer calls a retried scale perfect. The coin is for completing practice, not a perfect performance. Timing, fingering and technique are not assessed by this scale exercise. This affects new results; old records are retained.
-- Piano playback uses 30 packaged Salamander acoustic-grand-piano recordings with pitch-adjusted sampling, rather than the old triangle-wave tone. Scale and piece Listen controls preload their samples. Files load from ETM itself, with no AI cost or third-party sound-service account. A simple fallback tone remains if samples are unavailable. Include the entire assets/piano folder when uploading.
-- Piece practice exposes hand, speed and bar selection. Advanced tools include looping, metronome and other-hand accompaniment. Accompaniment works in Keep the beat mode with one hand selected and requires correct hand assignments in the imported score. A clean timed run below full speed offers Try a little faster. Wait for me still checks pitches without assessing timing.
-- Checkers adds a tactile wooden board, large pieces, legal-move highlights, compulsory captures, multi-jumps, kings, blocked wins and claimable draws. Rules are English-style draughts, with forward captures for men.
-- Colour Clash adds original ETM card artwork and classic UNO-style gameplay: seven cards, colour/number/symbol matching, Skip, Reverse, +2, Wild, +4 and challenges, a ONE call/catch penalty, no stacking, reshuffling and scoring. Choose one round or a full 500-point match. Simple mode is a clearly labelled numbers-and-Wilds teaching variant. Classic reference: https://service.mattel.com/instruction_sheets/uno%20basic%20is.pdf
-- Both new games use ONE device in this build. Colour Clash hides hands behind a pass-screen cover between players. Challenge hand disclosures are shown to the challenger, with a Hide hand & continue action. Game state is temporary in the open tab; Continue appears on Games & competitions while that game remains in memory. These games do not create learning results or spend API credit. The existing connected races remain available.
+Use the full Raspberry Pi Connect client on Raspberry Pi OS Bookworm or later, Wayland and an existing desktop session. Connect Lite does not provide desktop sharing. Set it up on the Pi with your own account, then open https://connect.raspberrypi.com/ on Dad’s device. It can relay a connection when a direct route is unavailable.
 
-Current-lesson importing and teacher-instruction integration are deferred, as requested. Existing file imports remain available.
+Official reference: https://www.raspberrypi.com/documentation/services/connect.html
+Browser capture reference: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia
 
-## Quick checks for the new features
+### Screen-share validation
 
-1. Open Emily → Maths → Learn & practise and choose addition or subtraction. Check the columns and carry boxes, then answer using the large choices. Test Show your thinking and the single Next action.
-2. Open Music → Notes & theory → Find the note. A correct answer should advance automatically; a wrong answer should wait.
-3. Play a scale with a deliberately wrong received MIDI note, then complete it. Its result must show that wrong note. Playing only the provided correct screen keys cannot reveal mistakes made on an unconnected physical instrument.
-4. In a saved piece, select one hand and Keep the beat; enable Play the other hand in Advanced practice tools. Use Listen to hear the sampled piano. Check the score’s hand assignment if accompaniment is missing or wrong.
-5. Open Games & competitions → Checkers. Try a capture and a king. Open Colour Clash with two or three different names and check each pass-screen cover before revealing a hand.
+Automated tests simulate two device contexts and media peers: a request alone does not capture; only the consent-button path calls getDisplayMedia; mismatched devices/sessions are rejected; offers/answers and early ICE candidates negotiate; the viewer never captures a local stream; decline, browser denial, browser Stop, late capture after profile change, request timeout and heartbeat expiry stop the tracks and close the connection.
 
-Piano sample credit: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0. MP3 distribution from Tone.js. Attribution and source links are in Music → Piano sound and assets/piano/README.txt.
+These are simulated-media checks, not an actual video transmission test. Real Raspberry Pi capture, phone playback, network traversal, browser fullscreen behaviour and visual layout require the checklist above. The preview browser remains unavailable for visual verification. No AI requests or real screen recordings were used during automated tests.
 
-## Install
+## Install this version
 
-1. Download and extract ETM_Piano_Study_Revision.zip.
-2. In GitHub, open ETM2026/etm-whiteboard, main branch.
-3. Choose Add file → Upload files. Upload all extracted contents to the repository root, including the maths-ai and tests folders. Do not upload the ZIP or an extra enclosing folder.
-4. Commit. Wait for both GitHub Pages and the Cloudflare Worker build to finish.
-5. Refresh ETM. On Windows, Ctrl+Shift+R reloads the latest files. On a tablet, close and reopen the tab if the old menu remains.
+1. On the device that has your existing pieces and progress, unlock Dad and download a family backup. Keep it somewhere safe. Do not clear browser data.
+2. Extract ETM_Screen_Sharing_Revision.zip.
+3. Open ETM2026/etm-whiteboard on GitHub, main branch. Choose Add file → Upload files. Upload ALL extracted contents to the repository root, including assets, maths-ai and tests. Do not upload the ZIP or an enclosing folder.
+4. Commit and wait for BOTH GitHub Pages and the Cloudflare Worker build to succeed. Uploading only index.html will not enable syncing.
+5. Refresh the original device. On Windows use Ctrl+Shift+R. Unlock Dad first, then open the Family sync status in the header. Wait for Family synced. Existing public family credentials are refreshed automatically when Dad connects. No new OpenAI key or API payment is needed.
+6. Open the same family invitation on your phone/tablet, then sign in with the relevant profile PIN. A matching room code alone is not sufficient: devices need the same family signing keys. Copy family invitation is available in Family sync and Family PINs.
+7. Open Music → My pieces on the phone. Allow up to 15 seconds for the background data check; use Sync now to check immediately. Refresh or re-enter My pieces after sync if that screen was already open.
 
-No new account, API key, database migration or Wrangler configuration change is needed. The package leaves maths-ai-config.js, Cloudflare secrets and your database configuration in place. Download a family backup from the existing app before installing.
+The existing Worker/D1 binding is used. The two new sync tables are created automatically by the authenticated sync route. Existing migrations, Wrangler configuration, backend address, secrets and child-AI privacy settings remain in place. If the service says Dad must connect the family first, use the existing Backend connection screen; do not replace an existing family or create new PINs just to enable sync.
 
-## The new structure
+## What is new
 
-Home has six choices: Maths, Reading, Music, Geography, Science, and Games & competitions. Draw, My progress and More sit below them. Dad has one Dad’s space link.
+### Data follows the family
 
-Maths:
-- Learn & practise: one skill/stage setup and one three-question screen, with original number ranges, optional columns and word problems. Counting, addition, subtraction, mixed sums, division, number bonds, fractions, time, money, shapes and place value remain available. Required diagrams appear with the question. Visual hints and a drawing pad remain available.
-- Times tables: the existing Learn it, Practise it and Rally activities, with their saved facts and levels.
-- Homework helper: one destination for method hints and separate practice. It does not accept or solve the child’s original homework answer. Emily’s photo option appears only when her existing permissions and privacy setup allow it.
-- Practise with Dad: Dad’s original shared questions, invitations and Maths Board.
+- Music pieces, titles, arrangements, favourites and practice status.
+- Standard learning records, piano study records and guided-course completion.
+- Signed results/coins and Dad’s signed result corrections.
+- Profile settings, including game hints, maths support and times-table facts.
+- Family-authored quizzes and saved stories. These creations are family-shared; a child cannot claim another profile as the author in cloud storage.
+- Dad’s shared reading material and saved drawing board. Incoming drawings are deferred until a home/parent screen, so an active drawing is not replaced.
+- Santa’s Lists, including attached pictures, using their existing item-level merge rules.
+- Dad’s encrypted private goal vault and its matching verifier, readable through the sync service only by Dad.
 
-Games & competitions:
-- Family quiz, Matching pairs, X and O’s, Connect four.
-- Maths Sprint, Times Tables Rally, Note Race, Music Quiz Race.
-- Guess the word, Treasure voyage and Draw & guess under More playful adventures.
-- Family quiz contains Play a quiz, Make a question and Saved questions. Existing family-authored questions are retained. Dad can also generate and review an optional AI draft. Reviewed AI test drafts remain Dad-only.
+Existing records upload from their original device after sign-in. Local learning remains saved before it uploads. Signing out of a profile stops that profile’s pending requests from applying to another profile. Guests do not upload their private practice. Sync does not call OpenAI or consume API credits; Cloudflare hosting/storage usage still applies.
 
-Music:
-- Notes & theory, Listening & rhythm, Scales, My pieces.
-- One Add a piece screen for file import and standard photo/PDF scanning. Dad’s optional adult AI scan appears there only when enabled. Every scan still requires review.
-- Race together opens the same Games & competitions destination.
-- Saved pieces, MIDI/keyboard practice, falling notes, RIAM settings and original exercises remain available.
+Sync is authenticated by the existing family keys over HTTPS. Ordinary pieces and learning records are stored in your family backend; they are not end-to-end encrypted by this revision. The private goal vault retains its existing encryption. PIN private keys and OpenAI secrets are not uploaded by sync. Photos already attached to saved music and Santa lists are included in family storage, not sent to AI by syncing.
 
-My progress:
-- One destination for the child’s current practice, times-table facts and original recorded music/reading/game sessions.
-- Emily’s saved AI check-ups load in a separate labelled section when connected.
-- Practice answers, helped answers, recorded sessions, coins and game scores are not merged into an artificial combined grade.
-- Only Dad can select a different family member’s progress. Guest practice remains temporary.
-- New practice history remains local to the device and is included in family backups. This update does not add automatic cross-device sync.
-- Private star charts remain separate in Dad’s Family settings.
+### Conflicts and limits
 
-Dad’s space:
-- Learning & progress: starting stages, read-aloud, progress, music levels, school words and optional weekly tasks.
-- AI & spending: master AI switch, feature switches, one shared allowance, Emily’s separate privacy-gated permission, and backend connection.
-- Family settings: PINs, invitations, private goals, usage, result corrections, messages, camera and sound.
-- Backup & restore: one place to export or restore.
-- Advanced adult AI tests are collapsed below the main cards. Their results remain separate from child progress.
+Version checks reject stale writes. Progress histories merge by stable identifiers. Conflicting music edits become a separate “recovered edit” arrangement so both versions can be reviewed. Piece deletions have retained tombstones. Conflicting private charts/drawings keep a recoverable device copy; Dad can download it from Family sync. Keep backups as well.
 
-More contains story creation, Santa’s List and messages. Chat and Together remain in the header.
+Independent times-table sessions can update the same aggregate fact simultaneously. Their fact totals merge conservatively using the larger count, rather than adding potentially duplicate totals; signed completed-session records remain separate. Do not interpret the aggregate counter as an exact sum of simultaneous offline practice.
 
-## First checks after installing
+Individual saved items must be below 1.5 million JSON characters. An unusually large attached image can prevent its upload; export a copy and reduce that image. Sync uses bounded batches. Already-open activities keep working without internet and retry changes when online. Reopening ETM without internet is not guaranteed yet; this is not a complete offline/PWA release.
 
-1. As Dad, open Dad’s space → AI & spending. Turn AI enhancements off and save. Confirm standard Maths, Geography, Science and games still run.
-2. Open Maths → Learn & practise. Try a clock/fraction question and an addition question with Column sums. Check that the picture/columns appear. Use Help me think and Show your thinking.
-3. Open Games & competitions. Each named game/race should appear once. Connect devices through Together for connected races; Times Tables Rally also supports taking turns on one device.
-4. Open My progress. Check older game/music results and times-table facts as well as new practice. As Dad, select a child; as a child, only their own progress is shown.
-5. Open Music → My pieces. Check existing saved pieces and Add a piece. Standard scanning and import do not need AI.
-6. Open Family quiz → Saved questions and check your existing authored questions.
-7. If you want to test AI, re-enable it as Dad. Use only your own or synthetic material in Advanced adult AI tests while child-data approval is pending.
+Live game state, microphone/video recordings, guest sessions, device diagnostics and adult AI draft storage are not turned into cloud archives. Text chat keeps its existing delivery/history design. The full account-wide archive/restore design for those separate systems is not part of this revision.
 
-The mixed-worksheet scanner improvements from the previous package are included: higher image detail, acceptance of readable supported topics on mixed pages, and separate messages for unsupported, unclear, privacy-blocked and incomplete scans. This does not add shape, symmetry, money, weight or tally charts as new AI-coached skills.
+### Together fallback
 
-## Validation and limits
+Signed family messages can use a short-lived server relay when the direct browser connection fails. Family presence updates automatically, and the Together drawer lists who is here. Reconnect Together restarts the direct connection and checks the relay. The relay polls around once a second while the app is open; network delays can still affect timed games. Camera and microphone calls still require the direct connection. This fixes the discovery dependency; it does not add a video-call relay.
 
-Automated checks cover all original maths skill families in the consolidated question screen, distinct answer choices, column visuals, single game routes, child progress isolation, daily lessons, nine-turn quizzes, AI switches and backup merge/restore. The backend type check, full test suite and production-build dry run passed. AI tests use mocked responses and do not spend API credit.
+### Interactive maths
 
-New automated tests also cover Checkers, five full simulated card rounds, card conservation, +4 challenges, private-hand screens, music auto-progression guards, truthful scale records, accompaniment and sampled-audio preloading. All 30 MP3 files decode successfully. Listening quality and USB-piano behaviour have not been verified on your physical devices.
+Maths → Learn & practise → Build it · interactive discoveries includes:
 
-The final visual/browser check remains unavailable because the preview browser previously blocked refreshing the local preview. There has been no live AI rescan of your photograph. Use the first-check list above after upload.
+- Count and match with boats.
+- Build a number with counters.
+- Tens/units subtraction with an exchange and a matching written-column display.
+- Equal-group multiplication visuals.
+- Interactive equal fraction strips.
+- Missing-number balance activities.
 
-No saved learning data, pieces, family questions, coins, private goals or PINs are deliberately deleted or reset by this update. Keep regular backups, especially before moving between devices. Adult AI drafts continue to use their existing device-local test storage.
+Emily’s exchange activity lets her tap or drag blocks to remove units/tens. Exchanging preserves total value. The final question uses a fresh generated problem without the objects, so completing an animation alone is not treated as independent understanding.
 
-Developer checks: from the repository root, run node --test tests/*.test.mjs. In maths-ai, run npm ci, npm run check, npm test and npm run build. The build command is a dry run and does not deploy.
+Choose Teach me, Let me try or Challenge. Challenge removes hint buttons. Teach me guides the first activities, then offers an independent transfer question. Hints are deliberately bounded and use separate examples; the app does not infer a diagnosis from one wrong answer. The progression is a foundation: fraction comparison, interactive division and a complete multi-stage adaptive curriculum remain future extensions.
+
+Today’s existing number adventure now chooses one of these short discoveries using recent independent/helped evidence. Free choice and all existing standard skills remain. My progress → What to practise next describes observed practice and suggests the next activity. These are app observations, not a school grade.
+
+### UNO and Checkers
+
+Colour Clash is now labelled UNO, with original ETM curved-panel card artwork, larger numerals and clear action symbols. Existing classic rules remain: seven cards, no stacking, Wild +4 challenge, UNO call/catch, two-player Reverse as Skip, one round or 500-point match. Simple mode remains a labelled teaching variant.
+
+Both games have a Show hints toggle. Its setting follows the signed-in profile; guests use a temporary setting. With hints off:
+
+- UNO cards are equally selectable. Invalid choices are rejected after selection; the hand does not reveal the playable cards through disabled styling. Wild +4 advice is hidden. UNO call/catch controls remain available without announcing the moment to use them.
+- Checkers shows no destination dots or legal-move highlighting. Selected-piece feedback remains so players know which piece they tapped. Legal moves and compulsory captures are always enforced.
+
+Both games still use one device and private pass-screen hands where applicable. This update does not turn them into remote multiplayer games.
+
+## Test on your devices after upload
+
+1. Wait for Family synced on the device with your original pieces. Sign into the same profile on the phone and check the same library. Add a favourite on one device, Sync now on both, then reopen the library.
+2. Sign in as Dad and Emily on two devices. Open Together and wait for both names. Try a shared maths invitation. Check the relay status separately from camera/microphone connectivity.
+3. Open a piece on both devices and change its title differently. Sync both. Expect the current arrangement plus a recovered copy; remove the unwanted copy after review.
+4. While ETM remains open, disconnect internet, finish a short practice, reconnect and Sync now. Check its progress on the other device.
+5. Use Emily → Maths → Learn & practise → Build it. Exchange a ten, remove the specified units/tens, enter the result and finish the fresh third question.
+6. Turn Show hints off in UNO and Checkers. UNO should give no disabled-card clues; Checkers should show no destination dots. Deliberately try an illegal move and confirm it is rejected.
+7. Check Dad/child separation: a child must not see Dad’s private charts or another child’s private learning records. Family-authored quizzes and stories are intentionally shared.
+
+## Retained features
+
+The prior piano-study revision is included: optional original RIAM-related guided learning, sampled acoustic piano, percentage comparisons, searchable/grouped pieces, score following, tempo changes and existing games/subjects. Higher RIAM grades remain practice plans rather than full taught courses. Teacher-lesson importing remains deferred. Reimport original MusicXML/MIDI files to recover tempo changes that old imports discarded.
+
+Piano attribution: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0; MP3 distribution from Tone.js. Sources and licence are in assets/piano/README.txt. Upload that entire folder.
+
+## Verification
+
+Automated frontend checks cover the existing activities plus 1,000 exchange problems, a complete exchange UI journey, no-hint game behaviour and two isolated sync clients exercising migration, conflicts, deletes and offline retries. The Worker tests exercise D1 storage, access control, stale-write rejection, signed relay and all-child sync without granting AI access. All original backend tests, TypeScript checks and the build dry run are included in validation.
+
+A fresh browser visual check remains unavailable because the preview browser previously blocked refreshing the local preview. Real phone/tablet networking, video calls, USB piano and the live Cloudflare deployment need the device checklist above. No live provider calls were used for tests, and the reported Together failure has not been reproduced on your actual devices.
+
+Developer checks: node --test tests/*.test.mjs at the root. In maths-ai: npm ci, npm run check, npm test, npm run build (dry run).

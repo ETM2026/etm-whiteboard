@@ -1,3 +1,4 @@
+import {handleFamilySync} from './family-sync';
 import {handleTutor} from './maths-tutor';
 import {handleLab} from './ai-lab';
 import {authenticate,publicDirectory,verify,reject,canonical} from './access';
@@ -10,7 +11,8 @@ export default {async fetch(req:Request,env:EtmEnv):Promise<Response>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')reject('Use a signed request.',405);
  if(!env.DB)reject('The learning database is not connected.',503);
- const raw=await req.text();if(raw.length>700000)reject('Choose a smaller photo.',413);let packet:any;try{packet=JSON.parse(raw);}catch{reject('Invalid request.',400);}
+ const isSync=new URL(req.url).pathname==='/family-sync';
+ const raw=await req.text();if(raw.length>(isSync?4000000:700000))reject('Choose a smaller photo.',413);let packet:any;try{packet=JSON.parse(raw);}catch{reject('Invalid request.',400);}
  const path=new URL(req.url).pathname.slice(1);
  if(path==='enroll'){
  const b=packet?.body;if(!b||b.path!==path||!Number.isFinite(b.at)||Math.abs(Date.now()-b.at)>60000)reject('Setup request expired.');
@@ -21,7 +23,8 @@ export default {async fetch(req:Request,env:EtmEnv):Promise<Response>{
  const q=env.DB.prepare(sql).bind(...(old?[JSON.stringify(d.children)]:[d.family,JSON.stringify(d.root),JSON.stringify(d.children)]));const r=await q.run();if(!r.meta.changes)reject('A family was already connected. Refresh and try again.',409);
  return Response.json({saved:true},{headers});
  }
- const s=await authenticate(env.DB,packet,path);
+ const s=await authenticate(env.DB,packet,path,path==='family-sync');
+ if(path==='family-sync')return Response.json(await handleFamilySync(env.DB,s,packet.body.data),{headers});
  const feature=path.includes('piano')?5:path.includes('quiz')?6:['scan','working','answer','dad-test-answer','lab-maths-scan','lab-maths-working'].includes(path)?4:0;
  if(feature){const setting:any=await env.DB.prepare('SELECT enabled FROM tutor_config WHERE id=?').bind(feature).first();if(setting&&setting.enabled===0)reject('This AI feature is switched off by Dad. Use standard learning.',409);}
  const get=path==='status';const inner=new Request('https://etm.internal/'+path,{method:get?'GET':'POST',headers:{'Content-Type':'application/json'},body:get?undefined:JSON.stringify(packet.body.data||{})});

@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
+const ctx={window:{}};vm.createContext(ctx);for(const file of ['piano-study-core.js','family-sync-core.js'])vm.runInContext(readFileSync(new URL('../'+file,import.meta.url),'utf8'),ctx);const C=ctx.ETM_SYNC_CORE;
+const r={owner:'Emily',collection:'pieces',id:'p',value:{title:'Original'}},key=C.key(r),meta={[key]:{version:2,hash:C.stamp(r.value)}};
+assert.equal(C.pending({[key]:r},meta).length,0);assert.equal(C.pending({},meta)[0].value,null);assert.equal(C.pending({},meta)[0].version,2);assert.equal(C.pending({[key]:{...r,value:{title:'Offline edit'}}},meta)[0].version,2);
+assert.equal(C.decision(r.value,{...r,version:3,value:{title:'Other edit'}},meta[key]),'remote');assert.equal(C.decision({title:'Offline edit'},{...r,version:3,value:{title:'Other edit'}},meta[key]),'copy');assert.equal(C.decision({title:'Offline edit'},{...r,version:3,value:null},meta[key]),'copy');assert.equal(C.decision({title:'Offline edit'},{...r,version:2},meta[key]),'local');assert.equal(C.decision(undefined,{...r,version:3,value:null},undefined),'remote');
+assert.equal(C.pending({}, {[JSON.stringify(['Shared','shared','learning'])]:{version:1,hash:'x'}}).length,0,'Read-only shared records never produce deletion writes');
+assert.equal(C.decision({events:[{id:'local'}]},{owner:'Emily',collection:'learning',id:'profile',version:2,value:{events:[{id:'remote'}]}},{version:1,hash:'different'}),'merge');
+console.log('PASS Offline edits, versioned deletes, concurrent music recovery, mergeable progress and no read-only tombstones.');

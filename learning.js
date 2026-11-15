@@ -24,7 +24,7 @@ function learningPlayTogether(){
  learningCard(games,'🧠','Matching pairs','Team up or compete · one device or connected screens',matchingMenu,'lilac');
  learningCard(games,'❎','X and O’s','Three in a row · take turns together',function(){newGame('ttt')},'blue');
  learningCard(games,'🔴','Connect four','Drop a counter and plan your next move',function(){newGame('c4')},'peach');
- learningCard(games,'♟','Checkers','A beautiful board · captures, kings and clever moves',function(){familyGameStart('checkers')},'mint');learningCard(games,'✦','Colour Clash','Classic colour-and-number cards · private hands',function(){familyGameStart('cards')},'yellow');if(typeof familyGame!=='undefined'&&familyGame)btn('Continue '+(familyGame.type==='checkers'?'Checkers':'Colour Clash'),familyGameRender,a,'primaryButton');
+ learningCard(games,'♟','Checkers','A beautiful board · captures, kings and clever moves',function(){familyGameStart('checkers')},'mint');learningCard(games,'✦','UNO','Classic colour-and-number cards · private hands',function(){familyGameStart('cards')},'yellow');if(typeof familyGame!=='undefined'&&familyGame)btn('Continue '+(familyGame.type==='checkers'?'Checkers':'UNO'),familyGameRender,a,'primaryButton');
  node('h2','Friendly races',a,'lPlayHeading');node('p','Use Together to connect devices for maths and music races. Times Tables Rally also lets you take turns on one device.',a,'lIntro');var races=node('div',undefined,a,'lSubjectGrid');
  learningCard(races,'🔢','Maths Sprint','Connected devices · each player’s own level',function(){raceSetup('math')},'mint');
  learningCard(races,'🏁','Times Tables Rally','Take turns or connect screens · equal time',function(){ttRaceSetup()},'yellow');
