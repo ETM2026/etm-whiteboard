@@ -1,6 +1,33 @@
-# ETM Screen Sharing Revision — 15 November 2026
+# ETM Sync & Together Reliability Fix — 15 November 2026
 
 This is a combined update to the existing GitHub/Cloudflare app. It is packaged for upload and has not been deployed to your live account.
+
+## Fixes for the reported laptop/phone and Together problems
+
+This is the full combined app, including screen sharing and the prior learning/game updates. It has not been deployed to your account yet.
+
+- The old “A saved item is too large to sync” limit has been replaced with automatic, resumable transfers in small parts. Music/photo data is checked for integrity before publication and after download. Existing local pictures are not deleted, reduced or reimported.
+- Failed or slow data transfers no longer occupy the family-message connection. Presence, chat and screen-share signalling have their own retry pump.
+- Together and Chat use the same verified family-member list. Brief dropouts retain the names and show a reconnecting state rather than repeatedly losing everyone. New members exchange identity/presence automatically.
+- Retrying a failed data connection preserves an existing video call and video tile. A full peer restart is avoided while a working call remains active.
+- Chat Send can work through the signed family relay without a direct data channel. It explains an empty message, short sending pause or missing family recipient. Delivery receipts remain acknowledgements from the receiving device, not claims that someone read the message.
+- Messages retry automatically for up to five minutes while the page remains open. If the other device reloads, retries can follow the same signed profile key to its new device ID; they do not follow a changed PIN/key. Duplicate delivery is not displayed twice. Closed-page/offline chat archival is not added by this fix.
+
+### What Dad needs to do once
+
+1. Keep the original laptop’s data. Save a family backup for safety; do not restore it or clear browser storage.
+2. Extract this ZIP and upload ALL contents to the existing repository root, including maths-ai, connection-health.js and the tests folder. Commit and wait for both GitHub Pages AND the Cloudflare Worker deployment to succeed. This fix changes both frontend and backend.
+3. On the laptop, reload ETM with Ctrl+Shift+R. Sign in as Dad, open ☁ Sync and use Sync now. Leave the tab open while the item progress advances. No manual image resizing should be needed for the reported case.
+4. Close and reopen the usual link on the phone. Use the same family invitation and the SAME profile whose music you are checking. Allow the receiving transfer to finish, then reopen My pieces. Each profile’s library stays separate.
+5. Open Together on both devices. The family names should appear automatically. Type a short message or use a quick reply, then confirm its delivery receipt on the other device. Test a brief connection interruption and check that messages recover without resetting the working video.
+
+The children continue using their existing links and PINs. No new app, API key, account, manual database migration or routine reconnect action is required. The extra transfer table is created automatically by the authenticated backend. Older app versions that encounter a newly transferred large item are asked to refresh instead of interpreting the transfer marker as a music piece.
+
+### Checks completed and remaining limits
+
+Automated tests reproduce a 1.7-million-character saved image, move it between two isolated app clients, reject a corrupted download, resume after a lost acknowledgement, and keep the message pump running while an upload is deliberately stalled. The real D1 tests cover segmented upload/download, atomic publication, integrity checking, idempotent commit retry and profile privacy. Chat tests cover relay-only sending, delivery receipts, same-key reload recovery, duplicate suppression and preserving working media when data closes.
+
+Frontend regressions, the complete Worker suite, TypeScript and the production build dry run are part of validation. Real laptop/phone/Pi behaviour and visual layout still need the device check above. These changes address identified code paths; they do not guarantee connectivity on every router, browser or restricted work network. Screen video still needs a suitable direct media path or the separate Raspberry Pi Connect alternative described below.
 
 ## New: Dad can request a screen share
 
@@ -44,7 +71,7 @@ These are simulated-media checks, not an actual video transmission test. Real Ra
 ## Install this version
 
 1. On the device that has your existing pieces and progress, unlock Dad and download a family backup. Keep it somewhere safe. Do not clear browser data.
-2. Extract ETM_Screen_Sharing_Revision.zip.
+2. Extract ETM_Reliability_Fix.zip.
 3. Open ETM2026/etm-whiteboard on GitHub, main branch. Choose Add file → Upload files. Upload ALL extracted contents to the repository root, including assets, maths-ai and tests. Do not upload the ZIP or an enclosing folder.
 4. Commit and wait for BOTH GitHub Pages and the Cloudflare Worker build to succeed. Uploading only index.html will not enable syncing.
 5. Refresh the original device. On Windows use Ctrl+Shift+R. Unlock Dad first, then open the Family sync status in the header. Wait for Family synced. Existing public family credentials are refreshed automatically when Dad connects. No new OpenAI key or API payment is needed.
@@ -76,7 +103,7 @@ Version checks reject stale writes. Progress histories merge by stable identifie
 
 Independent times-table sessions can update the same aggregate fact simultaneously. Their fact totals merge conservatively using the larger count, rather than adding potentially duplicate totals; signed completed-session records remain separate. Do not interpret the aggregate counter as an exact sum of simultaneous offline practice.
 
-Individual saved items must be below 1.5 million JSON characters. An unusually large attached image can prevent its upload; export a copy and reduce that image. Sync uses bounded batches. Already-open activities keep working without internet and retry changes when online. Reopening ETM without internet is not guaranteed yet; this is not a complete offline/PWA release.
+Large saved items now transfer in small verified parts, up to a safety limit of 12 million JSON characters per item. Items beyond that limit are named for Dad’s review while smaller items continue syncing; they do not block the family message connection. Original local images and music are retained. Sync uses bounded batches. Already-open activities keep working without internet and retry changes when online. Reopening ETM without internet is not guaranteed yet; this is not a complete offline/PWA release.
 
 Live game state, microphone/video recordings, guest sessions, device diagnostics and adult AI draft storage are not turned into cloud archives. Text chat keeps its existing delivery/history design. The full account-wide archive/restore design for those separate systems is not part of this revision.
 
