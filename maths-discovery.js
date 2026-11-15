@@ -14,7 +14,55 @@ function discoveryStart(kind,mode){discoverySession={id:crypto.randomUUID(),acto
 function discoveryQuestion(){var s=discoverySession;if(!s||s.actor!==accessSession||s.name!==learningName())return;var q=s.questions[s.index],a=learningPage(ETM_DISCOVERY.skills[s.kind].title,'maths',discoverySetup);if(!q){discoveryFinish(a);return}if(!q.state)q.state={...q,removedTens:0,removedUnits:0,shaded:[],built:0,helped:s.mode==='teach'&&s.index<2,misses:0,step:0};var state=q.state;node('span','STEP '+(s.index+1)+' OF 3 · '+(s.index===2?'TRY A FRESH QUESTION':s.mode==='teach'?'LEARN & BUILD':s.mode==='challenge'?'INDEPENDENT CHALLENGE':'YOUR TURN'),a,'lEyebrow');var card=node('div',undefined,a,'discoveryCard');node('h2',q.label,card,'discoveryEquation');var area=node('div',undefined,card,'discoveryModel'),message=node('p','',card,'discoveryFeedback');message.setAttribute('role','status');
  function tell(t){message.textContent=t}function rerender(){discoveryQuestion()}function guard(){return s===discoverySession&&s.actor===accessSession&&!state.done}
  var transfer=s.index===2;
- if(!transfer&&q.kind==='exchange'){var visual=node('div',undefined,area,'discoveryPlace'),columns=node('div',undefined,area,'discoveryColumns');columns.innerHTML='<small>Tens　Units</small><strong>'+state.tens+'　'+state.units+'</strong><span>− '+(q.takeTens-state.removedTens)+'　'+(q.takeUnits-state.removedUnits)+'</span>';['tens','units'].forEach(function(place){var tray=node('div',undefined,visual,'discoveryTray');node('h3',place==='tens'?'Tens':'Units',tray);for(var i=0;i<state[place];i++){var b=btn(place==='tens'?'10':'1',function(){if(!guard())return;if(ETM_DISCOVERY.remove(state,place))rerender();else tell('Check how many '+place+' the subtraction asks you to remove.')},tray,'discoveryBlock '+place);b.draggable=true;b.ondragstart=function(e){e.dataTransfer.setData('text/plain',place)}}});var remove=node('div','Tap a block to take it away, or drop it here.',area,'discoveryDrop');remove.ondragover=function(e){e.preventDefault()};remove.ondrop=function(e){e.preventDefault();if(!guard())return;if(ETM_DISCOVERY.remove(state,e.dataTransfer.getData('text/plain')))rerender();else tell('Check which place still needs taking away.')};btn('Exchange one ten for ten units',function(){if(guard()&&ETM_DISCOVERY.exchange(state))rerender()},area,'quietButton');node('small','Take away '+q.takeTens+' tens and '+q.takeUnits+' units. Removed: '+state.removedTens+' tens, '+state.removedUnits+' units.',area);}
+ if(!transfer&&q.kind==='exchange'){
+   const instruction=node('p','',area,'exchangeInstruction');
+   instruction.setAttribute('role','status');
+   const visual=node('div',undefined,area,'discoveryPlace');
+   const columns=node('div',undefined,area,'discoveryColumns');
+   const target=node('div','Or drag a block here to take it away.',area,'discoveryDrop');
+   const guided=s.mode!=='challenge';
+   function paintExchange(){
+     const units=q.takeUnits-state.removedUnits,tens=q.takeTens-state.removedTens;
+     const trade=state.units<units;
+     const place=trade?'exchange':units?'units':tens?'tens':'answer';
+     const count=units||tens;
+     instruction.textContent=place==='answer'?'Count the blocks left. What number do they make?':
+       !guided?'Use the blocks to show the subtraction.':
+       trade?'Only '+state.units+' units. Tap a blue 10 to split it into ten 1s.':
+       'Tap '+count+(units?' yellow '+(count===1?'unit':'units'):' blue '+(count===1?'ten':'tens'))+' to take '+(count===1?'it':'them')+' away.';
+     visual.replaceChildren();
+     function split(){if(guard()&&ETM_DISCOVERY.exchange(state)){tell('');paintExchange();const fresh=visual.querySelectorAll('.discoveryBlock.units');Array.from(fresh).slice(-10).forEach(b=>b.classList.add('newUnit'))}}
+     if(!guided&&trade)btn('Swap 1 ten for 10 units',split,visual,'quietButton');
+     function remove(block){
+       if(!guard()||!['tens','units'].includes(block)||guided&&block!==place)return;
+       if(ETM_DISCOVERY.remove(state,block)){tell('');paintExchange()}
+     }
+     for(const block of ['tens','units']){
+       const tray=node('div',undefined,visual,'discoveryTray');
+       node('h3',block==='tens'?'Tens':'Units',tray);
+       for(let i=0;i<state[block];i++){
+         const canSplit=guided&&trade&&block==='tens';
+         const tile=btn(block==='tens'?'10':'1',canSplit?split:()=>remove(block),tray,'discoveryBlock '+block);
+         tile.setAttribute('aria-label',canSplit?'Split one ten into ten units':block==='tens'?'Take away one ten':'Take away one unit');
+         tile.disabled=guided?!canSplit&&place!==block:!(block==='units'?units:tens);
+         tile.draggable=!tile.disabled;
+         tile.ondragstart=e=>e.dataTransfer.setData('text/plain',block);
+       }
+     }
+     target.hidden=guided||place==='answer';
+     if(guided&&typeof label!=='undefined'&&label){label.hidden=place!=='answer';if(check)check.hidden=label.hidden}
+     target.ondragover=e=>e.preventDefault();
+     target.ondrop=e=>{e.preventDefault();remove(e.dataTransfer.getData('text/plain'))};
+     columns.replaceChildren();
+     const written=node('table',undefined,columns,'exchangeSum');
+     written.setAttribute('aria-label','Written subtraction');
+     for(const [i,row] of [['','Tens','Units'],['',q.tens,q.units],['−',q.takeTens,q.takeUnits]].entries()){
+       const tr=node('tr',undefined,written);
+       for(const cell of row)node(i===0?'th':'td',String(cell),tr);
+     }
+   }
+   paintExchange();
+ }
  else if(!transfer&&q.kind==='count'){var boats=node('div',undefined,area,'discoveryObjects');for(var i=0;i<q.answer;i++)node('span','⛵',boats);node('p','Count each boat once.',area)}
  else if(!transfer&&['bonds','groups','balance'].includes(q.kind)){var target=q.kind==='groups'?q.groups:q.kind==='bonds'?2:2,rows=node('div',undefined,area,'discoveryObjects');if(q.kind==='groups'){for(var g=0;g<target;g++){var group=node('div',undefined,rows,'discoveryGroup');for(var i=0;i<q.size;i++)node('span','●',group)}}else{node('div',(q.kind==='bonds'?q.part:q.part)+' known counters',rows,'discoveryGroup');node('div',Array(state.built).fill('●').join(' ')||'Your missing group',rows,'discoveryGroup');btn('Add a counter',function(){if(guard()&&state.built<20){state.built++;rerender()}},area,'quietButton');btn('Remove a counter',function(){if(guard()){state.built=Math.max(0,state.built-1);rerender()}},area,'quietButton');node('p','Whole amount: '+q.whole+'. Build the missing group, then enter its size.',area)}}
  else if(!transfer&&q.kind==='fractions'){var strip=node('div',undefined,area,'discoveryFraction');strip.style.gridTemplateColumns='repeat('+q.parts+',1fr)';for(var i=0;i<q.parts;i++)(function(i){var b=btn(state.shaded.includes(i)?'✓':'',function(){if(!guard())return;state.shaded=state.shaded.includes(i)?[]:[i];rerender()},strip,'discoveryPart '+(state.shaded.includes(i)?'shaded':''));b.setAttribute('aria-label','Equal part '+(i+1));b.setAttribute('aria-pressed',state.shaded.includes(i))})(i);node('p','All pieces belong to the same whole. Shade one piece, then enter how many equal pieces make the whole.',area)}
@@ -24,7 +72,8 @@ function discoveryQuestion(){var s=discoverySession;if(!s||s.actor!==accessSessi
  if(s.mode!=='challenge')btn('Help me think',hint,card,'quietButton');
  var check=btn('Check my thinking',function(){if(!guard())return;var raw=input.value.trim();if(!/^\d+$/.test(raw)){tell('Enter a whole number first.');return}var answer=+raw;if(answer!==q.answer){state.misses++;if(s.mode==='challenge')tell('Not quite. Check your working and try again.');else if(q.kind==='exchange')tell('Let’s check a step: have you removed the required units? Exchanging changes the grouping, not the total value.');else tell('Check the model and how the parts relate to the whole. You can ask for a hint.');return}
  if(!transfer&&q.kind==='exchange'&&!ETM_DISCOVERY.done(state)){tell('Your total is right. Now show the exchange and taking away with the blocks.');return}if(!transfer&&q.kind==='fractions'&&state.shaded.length!==1){tell('Shade one equal part to show your fraction.');return}if(!transfer&&['bonds','balance'].includes(q.kind)&&state.built!==q.answer){tell('Build the missing group to show how it matches your answer.');return}
- state.done=true;check.disabled=true;check.hidden=true;input.disabled=true;var independent=!state.helped&&state.misses===0;if(independent)s.independent++;if(!(pl&&pl.guest)){ETM_CORE.record(learningProfile(),{eventId:s.id+':'+s.index,id:s.id+':'+s.index,unit:'discovery:'+q.kind,level:ETM_DISCOVERY.skills[q.kind].min,correct:state.misses===0,helped:state.helped,at:Date.now()});learningStore()}tell('Yes. '+(q.kind==='exchange'?'The written subtraction and the blocks describe the same change.':'The parts match the whole.'));btn(s.index===2?'Finish':'Next discovery →',function(){if(s.actor!==accessSession)return;s.index++;discoveryQuestion()},card,'primaryButton')},card,'primaryButton');input.onkeydown=function(e){if(e.key==='Enter')check.click()};if(s.mode==='teach'&&!transfer)hint();
+ state.done=true;check.disabled=true;check.hidden=true;input.disabled=true;var independent=!state.helped&&state.misses===0;if(independent)s.independent++;if(!(pl&&pl.guest)){ETM_CORE.record(learningProfile(),{eventId:s.id+':'+s.index,id:s.id+':'+s.index,unit:'discovery:'+q.kind,level:ETM_DISCOVERY.skills[q.kind].min,correct:state.misses===0,helped:state.helped,at:Date.now()});learningStore()}tell('Yes. '+(q.kind==='exchange'?'The written subtraction and the blocks describe the same change.':'The parts match the whole.'));btn(s.index===2?'Finish':'Next discovery →',function(){if(s.actor!==accessSession)return;s.index++;discoveryQuestion()},card,'primaryButton')},card,'primaryButton');input.onkeydown=function(e){if(e.key==='Enter')check.click()};if(!transfer&&q.kind==='exchange'&&s.mode!=='challenge'){label.hidden=check.hidden=!ETM_DISCOVERY.done(state)}
+ if(s.mode==='teach'&&!transfer&&q.kind!=='exchange')hint();
 }
 function discoveryFinish(a){var s=discoverySession,total=s.mode==='teach'?1:3,comparison=studyRecord(learningName(),{id:s.id,key:'discovery:'+s.kind+':'+s.mode,label:ETM_DISCOVERY.skills[s.kind].title,good:s.independent,total:total,detail:'Independent first attempts · '+s.mode});studyResult(a,'Independent first-try accuracy',s.independent,total,comparison,s.mode==='teach'?'Two guided questions; one independent check.':'Three opportunities for an independent first answer; hints and retries remain separate.');node('p','Three short discoveries are complete. You can stop here or choose another idea.',a,'lIntro');btn('Back home',home,a,'primaryButton');btn('Choose another discovery',discoverySetup,a,'quietButton');discoverySession=null}
 var discoveryBaseSetup=learningPracticeSetup;learningPracticeSetup=function(){discoveryBaseSetup();var a=club.querySelector('.activityArea');if(a)btn('Build it · interactive discoveries',discoverySetup,a,'quietButton')};

@@ -52,6 +52,7 @@ async function capture(call){
   if(!current(call)||!['ringing','invited'].includes(call.phase))return;
   call.phase='connecting';call.accept?.remove();call.status.textContent='Connecting…';
   try{
+    window.ETMPiano?.releasePlayback?.();
     const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:call.video});
     if(!current(call)){stream.getTracks().forEach(t=>t.stop());return}
     call.stream=stream;
@@ -154,4 +155,4 @@ function chime(){
 document.addEventListener('pointerdown',()=>{try{chatTone||=new (window.AudioContext||window.webkitAudioContext)();if(chatTone.state==='suspended')chatTone.resume().catch(()=>{})}catch{}});
 window.addEventListener('pagehide',()=>endCall());
 setInterval(()=>{if(activeCall&&!current(activeCall))endCall('',false)},500);
-window.ETMPrivate={receive,controls,chatControls,transmit,recipient,select:selectRecipient,chime,stop:endCall};
+window.ETMPrivate={inCall:()=>!!activeCall,receive,controls,chatControls,transmit,recipient,select:selectRecipient,chime,stop:endCall};

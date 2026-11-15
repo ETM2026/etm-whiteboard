@@ -14,5 +14,7 @@
 .tutorArea .tutorCrop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:100%;clear:both;margin:18px 0}
 .tutorArea .tutorCrop label{display:flex;flex-direction:column;gap:8px;min-width:0}
 .tutorArea .tutorCrop input[type=range]{display:block;width:100%;box-sizing:border-box;margin:0}
-.tutorArea .tutorPad canvas{position:static;inset:auto;display:block;width:100%;height:auto;transform:none}
+.tutorPad canvas{position:static;inset:auto;display:block;width:100%;height:auto;transform:none}
 @media(max-width:550px){.tutorArea .tutorCrop{grid-template-columns:1fr}.tutorArea canvas.tutorPhotoCanvas{max-height:360px}}
+
+.tutorPad > summary{min-height:44px;line-height:1.4;box-sizing:border-box;padding:12px 2px}

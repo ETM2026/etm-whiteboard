@@ -31,3 +31,9 @@
 
 .privateCall{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));right:12px;z-index:130;background:white;color:#223b50;border:2px solid #2d8177;border-radius:18px;padding:14px;box-shadow:0 8px 32px #17364833;max-width:min(360px,94vw);max-height:85dvh;overflow:auto}
 .privateCall strong,.privateCall video{display:block}.privateCall video{max-height:35dvh;max-width:100%;border-radius:10px}.privateCall button{margin:4px}.privateRecipients{display:flex;align-items:center;gap:8px;padding:8px 16px}.privateRecipients select{flex:1}.chatNotice{z-index:120}
+
+.exchangeInstruction{font-weight:700;font-size:1.05rem;margin:12px 0}.discoveryModel .primaryButton{margin-bottom:12px}.discoveryBlock:disabled{opacity:.8;cursor:default}
+
+.exchangeSum{border-collapse:collapse;text-align:center;font-variant-numeric:tabular-nums}.exchangeSum th{font-size:.75rem;letter-spacing:0}.exchangeSum td,.exchangeSum th{padding:1px 7px}.exchangeSum tr:last-child{border-bottom:2px solid currentColor}
+
+.discoveryCard [hidden]{display:none!important}.discoveryBlock:not(:disabled){outline:2px solid #297165;outline-offset:1px}.discoveryBlock:disabled{opacity:.6}.exchangeInstruction{color:#224b43}@media(prefers-reduced-motion:no-preference){.newUnit{animation:unitAppear .35s ease-out}@keyframes unitAppear{from{opacity:.2;transform:scale(.65)}to{opacity:1;transform:scale(1)}}}
