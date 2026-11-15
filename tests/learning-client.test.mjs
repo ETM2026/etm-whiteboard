@@ -5,7 +5,7 @@ class E{
 }
 const host=new E('main'),store=new Map(),notices=[],apiCalls=[],gameCalls=[];let remote={ai:{enabled:true,maths:true,piano:true,quiz:true},config:{limit:5,enabled:false,privacyReady:false},usage:{spent:0,reserved:0},dadTestEnabled:true};
 const ctx={RIAM_URL_2026:'https://www.riam.ie/',RIAM_URL_2027:'https://www.riam.ie/',performance,availableScales:()=>[],pieceStore:()=>ctx.pieces||{},savePiece:(p,name)=>{ctx.pieces=ctx.pieces||{};ctx.pieces[name]=ctx.pieces[name]||[];const i=ctx.pieces[name].findIndex(x=>x.id===p.id);i<0?ctx.pieces[name].push(p):ctx.pieces[name][i]=p;return true},scoreSVG:()=>'<svg></svg>',openCoach:p=>{ctx.opened=p},scoreFilePicker(){},photoFilePicker(){},readJSON:(k,d)=>d,writeJSON(){return true},copyObject:x=>JSON.parse(JSON.stringify(x)),demoPiece:()=>({id:'demo',title:'Demo',bars:[],events:[]}),ttTrail(){},tutorTrail(){},progressPage(){},familyProgress(){},sheetRoom(){},ttHome(){gameCalls.push('times-home')},newGame(k){gameCalls.push(k)},musicListeningRoom(){},scaleRoom(){},musicSettings(){},wordSettings(){},showTasks(){},familyAccessRoom(){},connectionSettings(){},showStars(){},usagePage(){},correctionRoom(){},teacherMaths(){gameCalls.push('dad-maths')},tutorRefreshIdentity(){},profileSettings:n=>({musicGrade:'elementary',musicYear:'2026',mathColumns:n==='Emily'}),gradeLabel:x=>x,musicLevelPicker(){},ttFacts:()=>({}),ttStrong:f=>f.streak>=3,metrics:()=>({events:[],coins:0,wins:0,days:0}),learned:{challenges:[]},labLoad:()=>null,labValidQuiz:()=>false,console,crypto,Date,Math,window:{},accessRoom:'fixture',pl:{n:'Emily'},FAMILY:['Emily','Tommy','Matthew'],childName:()=>ctx.pl.n,dadUnlocked:()=>ctx.pl.n==='Dad',stopCoach(){},closePrivate(){},setRoom(key,title){ctx.roomTitle=title},updateCoinBadge(){},notice:x=>notices.push(x),localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},club:host,shell:()=>{for(const x of host.all())x.isConnected=false;host.children=[];return host.appendChild(new E('section'))},node:(tag,text,parent,cls)=>{const x=new E(tag,text);x.className=cls||'';if(parent)parent.appendChild(x);return x},btn:(text,fn,parent,cls)=>{const b=ctx.node('button',text,parent,cls);b.onclick=fn;return b},actionCard:(a,i,t,c,color,fn)=>ctx.btn(t,fn,a),mathsRoom(){},home(){},parentRoom(){},musicRoom(){},readRoom(){},playRoom(){gameCalls.push('board')},matchingMenu(){gameCalls.push('pairs')},raceSetup(kind){gameCalls.push(kind)},ttRaceSetup(){gameCalls.push('tables')},openTogether(){gameCalls.push('connect')},createRoom(){},santaRoom(){},openTextChat(){},openWhiteboard(){},launch(){},tutorHome(){},tutorEndpoint:()=>'',tutorParent(){},tutorConnect(){},labHome(){},labMathHome(){},labPianoHome(){},labQuizSetup(){},labQuizMatch(){},exportFamilyBackup(){},importFamilyBackup(){},downloadData:(name,data)=>{ctx.exported=data},document:{createElement:tag=>new E(tag),createElementNS:(ns,tag)=>new E(tag)},requestAnimationFrame:fn=>fn(),tutorRun:async(b,fn)=>{try{await fn()}catch(e){notices.push(e.message)}},tutorApi:async(path,data)=>{apiCalls.push({path,data});if(path==='ai-settings'){remote={...remote,ai:data};return {saved:true}}return structuredClone(remote)}};
-vm.createContext(ctx);for(const file of ['learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','family-games.js','learning.js','piano-study.js'])vm.runInContext(readFileSync(new URL('../'+file,import.meta.url),'utf8'),ctx);
+vm.createContext(ctx);for(const file of ['learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','family-games.js','atlas.js','learning.js','piano-study.js'])vm.runInContext(readFileSync(new URL('../'+file,import.meta.url),'utf8'),ctx);
 const indexSource=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 function extractFunction(name){const a=indexSource.indexOf('  function '+name+'(');assert.ok(a>=0,name);const b=indexSource.indexOf('\n  function ',a+3);return indexSource.slice(a,b)}
 ctx.gid=()=>crypto.randomUUID();ctx.randint=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;ctx.random=a=>a[Math.floor(Math.random()*a.length)];ctx.shuffled=a=>a.slice().sort(()=>Math.random()-.5);
@@ -54,3 +54,27 @@ ctx.pl={n:'Emily'};ctx.profileSettings=()=>({gameHints:false,musicGrade:'element
 ctx.familyGame={type:'cards',names:['Emily','Dad'],game:ctx.ETM_GAMES.cards(['Emily','Dad'],false,false),visible:true,armed:false,wild:null,proof:null};if(ctx.familyGame.game.chooseOpeningColor)ctx.ETM_GAMES.opening(ctx.familyGame.game,'red');ctx.familyCardsRender();const handCards=host.all().filter(e=>e.tag==='button'&&(e.className||'').startsWith('fgCard '));assert.equal(handCards.length,7);assert.ok(handCards.every(e=>!e.disabled));const stateBefore=JSON.stringify(ctx.familyGame.game),bad=ctx.familyGame.game.players[ctx.familyGame.game.turn].hand.find(c=>!ctx.ETM_GAMES.playable(ctx.familyGame.game,c));if(bad){handCards[ctx.familyGame.game.players[ctx.familyGame.game.turn].hand.indexOf(bad)].click();assert.equal(JSON.stringify(ctx.familyGame.game),stateBefore)}assert.ok(button('Catch a missed UNO call'));console.log('PASS Hints-off Checkers hides destination clues; UNO enables every card equally but rejects illegal plays, with no automatic UNO-call prompt.');
 
 const musicEvents=new Map();ctx.window.addEventListener=(name,fn)=>musicEvents.set(name,fn);ctx.window.removeEventListener=(name,fn)=>{if(musicEvents.get(name)===fn)musicEvents.delete(name)};ctx.pl={n:'Dad'};ctx.pieces={Dad:[]};ctx.studyLibrary();assert.ok(!host.textContent.includes('Arrived from sync'));ctx.pieces.Dad.push({id:'remote-refresh',title:'Arrived from sync',bars:[{}],events:[]});musicEvents.get('etm-pieces-changed')({detail:{owner:'Dad'}});assert.ok(host.textContent.includes('Arrived from sync'));console.log('PASS Open music library refreshes immediately when its profile receives a downloaded piece.');
+for(const id of ['ireland','australia']){
+ const unit=ctx.ETM_DATA.units.find(u=>u.id===id);
+ for(let level=0;level<3;level++){
+  assert.ok(ctx.ETM_CORE.quiz(id,level,3).every(q=>q.unit===id));
+  ctx.learningLesson(unit);
+  const first=ctx.atlasStops[id][0];button(first[0]).click();assert.ok(host.textContent.includes(first[5]));
+  ctx.learningStartUnit(unit,level,false);
+  for(let n=0;n<3;n++){
+   const q=ctx.learningSession.questions[n],correct=q.options[q.correct];
+   const g=host.all().find(x=>x.tag==='g'&&x.textContent.trim()===correct);
+   assert.ok(g,correct);g.click();g.click();assert.equal(ctx.learningSession.score,n+1);
+   button('Next question →').click();
+  }
+ }
+}
+for(const id of ['oceans','world','journeys']){
+ const a=ctx.learningPage('Atlas');ctx.learningModel(id,a);
+ const path=host.all().find(x=>x.tag==='path'&&x.attrs.class===(id==='oceans'?'atlasSea':'atlasLand'));
+ path.click();assert.ok(path.attrs.class.includes('atlasChosen'));
+ const selected=host.all().find(b=>b.attrs['aria-pressed']==='true');
+ assert.ok(selected);assert.ok(host.all().find(x=>x.className==='atlasFact').textContent.length>10);
+ const next=host.all().find(b=>b.attrs['aria-pressed']==='false');next.click();assert.equal(next.attrs['aria-pressed'],'true');
+}
+console.log('PASS Atlas hit targets and labels, regional map lesson pins, 18 graded Irish and Australian map questions and quiz topics.');

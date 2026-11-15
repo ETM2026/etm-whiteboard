@@ -152,6 +152,36 @@ var ETM_DATA=(function(){
  ['Which force acts upward on an immersed object?','Buoyancy',['Only a downward push','No force','Sunlight'],'Water exerts an upward buoyant force.',2],
  ['Would opening and filling the bottle change the test?','Yes; the contents and average density change',['No; contents never matter','Only the colour changes','It stops being matter'],'Changing the air and water inside changes the whole object.',2]
  ]);
+ unit('ireland','geography','Explore Ireland','☘️','ireland',[
+ 'Explore the island of Ireland. Find a city by the sea, then look for a town inland.',
+ 'Trace the River Shannon in your mind from Athlone to Limerick. Which place is farther south?',
+ 'The island includes Ireland and Northern Ireland. Compare the capitals, coasts and river towns.'
+ ],[
+ ['Find the capital of Ireland.','Dublin',['Cork','Galway','Limerick'],'Dublin is on the east coast.',0],
+ ['Which southern city sits on the River Lee?','Cork',['Belfast','Dublin','Athlone'],'The River Lee flows through Cork.',0],
+ ['Which city sits on Galway Bay?','Galway',['Dublin','Belfast','Cork'],'Galway Bay opens out to the Atlantic.',0],
+ ['Which city is the capital of Northern Ireland?','Belfast',['Cork','Galway','Athlone'],'Belfast lies in the north-east of the island.',1],
+ ['Which inland town sits near the middle of the island?','Athlone',['Cork','Dublin','Galway'],'Athlone is on the Shannon in the Irish midlands.',1],
+ ['Find the west-coast city across the island from Dublin.','Galway',['Cork','Belfast','Athlone'],'Galway faces the Atlantic on the west coast.',1],
+ ['Follow the Shannon downstream from Athlone. Which city do you reach?','Limerick',['Cork','Dublin','Belfast'],'The Shannon flows through Limerick toward its estuary.',2],
+ ['A boat leaves the River Liffey and enters a bay. Which city has it passed?','Dublin',['Galway','Cork','Limerick'],'The River Liffey meets Dublin Bay on the east coast.',2],
+ ['Travel north-east from Dublin to a city at the head of a lough. Where are you?','Belfast',['Athlone','Cork','Limerick'],'Belfast sits at the head of Belfast Lough.',2]
+ ]);
+ unit('australia','geography','Explore Australia','🦘','australia',[
+ 'Find the mainland, then Tasmania. Tap the pins to discover a harbour, a city and a great rock.',
+ 'Use the north arrow. Look for Darwin in the north, Perth in the west and Hobart in the south.',
+ 'Compare coast and interior. Look at where Canberra sits in relation to Sydney and where Uluru sits in relation to the sea.'
+ ],[
+ ['Find Australia’s capital city.','Canberra',['Sydney','Perth','Darwin'],'Canberra is the national capital.',0],
+ ['Which pin marks a great sandstone rock?','Uluru',['Sydney','Darwin','Hobart'],'Uluru rises from the dry interior.',0],
+ ['Which city is on Tasmania?','Hobart',['Perth','Sydney','Canberra'],'Hobart is on the island south of the mainland.',0],
+ ['Which city is on the west coast by the Indian Ocean?','Perth',['Sydney','Canberra','Hobart'],'Perth is on the western side of Australia.',1],
+ ['Which city sits on the north coast?','Darwin',['Perth','Canberra','Sydney'],'Darwin is in the north of the Northern Territory.',1],
+ ['Which harbour city lies north-east of Canberra?','Sydney',['Hobart','Uluru','Perth'],'Sydney is on the east coast beside the Tasman Sea.',1],
+ ['Travel inland and south-west from Sydney. Which capital do you reach?','Canberra',['Perth','Darwin','Hobart'],'Canberra lies inland from Sydney.',2],
+ ['Which stop would take you farthest from the coast?','Uluru',['Darwin','Perth','Sydney'],'Of these stops, Uluru lies deepest in the interior.',2],
+ ['Cross Bass Strait heading south. Which city could you visit on that island?','Hobart',['Sydney','Perth','Darwin'],'Bass Strait separates Tasmania from the mainland.',2]
+ ]);
  units.forEach(function(u,i){u.order=i});
  return {units:units,levels:['First steps','Growing','Challenge'],subjects:{maths:['Maths','🔢'],reading:['Reading','📚'],music:['Music','🎹'],geography:['Geography','🌍'],science:['Science','🔬']},sources:[['Earth, day and night','https://www.nasa.gov/learning-resources/for-kids-and-students/what-is-earth-grades-k-4/'],['Oceans','https://oceanservice.noaa.gov/facts/biggestocean.html'],['Water cycle','https://water.usgs.gov/edu/watercycle-kids-beg.html']]};
 })();
