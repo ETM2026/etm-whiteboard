@@ -31,6 +31,7 @@ async function publishHome(){
       const publicEntry=c=>({pub:c.pub,epoch:c.epoch,history:c.history});
       const visible=c=>JSON.parse(JSON.stringify(publicEntry(c)));
       const partial={v:9,family:manifest.family,revision:manifest.revision,root:visible(manifest.root),children:{}};
+      if(typeof manifest.root.friendChat==='boolean')partial.root.friendChat=manifest.root.friendChat;
       for(const [person,c] of Object.entries(manifest.children))partial.children[person]=person===name?c:visible(c);
       partial.sig=await signature(owner.session.key,manifestBody(partial));
       data.visits.push({name,manifest:partial});

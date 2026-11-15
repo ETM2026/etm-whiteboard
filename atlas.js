@@ -1,3 +1,24 @@
+// The caption stays attached to the map so the selected place and its feedback travel together.
+function atlasCaption(parent){
+ const card=node('div',undefined,parent,'mapCaption');card.hidden=true;
+ const headline=node('strong','',card),fact=node('p','',card,'atlasFact'),tools=node('div',undefined,card,'mapTools'),challenge=node('div',undefined,card);
+ headline.setAttribute('aria-live','polite');challenge.setAttribute('aria-live','polite');
+ return {card,challenge,tools,fact,show(name,text){
+   card.hidden=false;headline.textContent=name;fact.textContent=text;tools.replaceChildren();challenge.replaceChildren();
+   const phrase=name+'. '+text;
+   if(window.speechSynthesis){btn('🔊 Hear again',()=>learningSpeak(phrase),tools,'quietButton');learningSpeak(phrase)}
+ }};
+}
+function atlasPrediction(caption,title,prompt,choices,correct,hint,success,after){
+ btn(title,()=>{
+   caption.challenge.replaceChildren();node('strong',prompt,caption.challenge);
+   const row=node('div',undefined,caption.challenge,'mapTools'),response=node('p','',caption.challenge);
+   for(const label of ETM_CORE.shuffle(choices))btn(label,()=>{
+     if(label!==correct){response.textContent=hint;return}
+     row.replaceChildren();response.textContent=success;if(after)after();
+   },row,'lPill');
+ },caption.tools,'primaryButton');
+}
 // Geography lessons share one map, one selection and one short explanation.
 function learningAtlas(kind, box) {
   const ocean = kind === 'oceans', journey = kind === 'journeys';
@@ -50,7 +71,7 @@ function learningAtlas(kind, box) {
   for(const [name,d] of Object.entries(atlasShapes.land)){
     const el=element('path',{d,fill:ocean?'#f1edce':palette[name]||'#ccd6b5',stroke:'#587e7b','stroke-width':'.7','stroke-linejoin':'round'},svg);
     if(!journey&&!ocean&&palette[name])mark(el,name,'atlasLand');
-    else el.onclick=()=>{feedback.textContent=ocean?'That’s land. Tap the blue water nearby.':directions;};
+    else el.onclick=()=>{caption.show('Explore the map',ocean?'That’s land. Tap the blue water nearby.':directions)};
   }
   element('path',{d:'M0 180H720',stroke:'#397c89','stroke-dasharray':'4 6',opacity:'.36','pointer-events':'none'},svg);
   if(journey) for(const [name,d] of Object.entries(atlasShapes.places)) mark(element('path',{d,fill:'#6eaf93'},svg),name,'atlasLand');
@@ -61,8 +82,9 @@ function learningAtlas(kind, box) {
     const label=element('text',{x,y:y+(journey&&name==='Sweden'?-9:13),'text-anchor':'middle',class:'atlasLabel'},g);
     label.textContent=name;g.onclick=()=>select(name);markers.set(name,label);
   }
+  const caption=atlasCaption(frame);
   const tabs=node('div',undefined,box,'atlasTabs');
-  const feedback=node('p','',box,'atlasFact');
+  const feedback=caption.fact;
   feedback.setAttribute('aria-live','polite');
   for(const [name] of entries){
     const b=btn(name,()=>select(name),tabs,'lPill'); b.setAttribute('aria-pressed','false');buttons.set(name,b);
@@ -71,7 +93,11 @@ function learningAtlas(kind, box) {
     for(const [key,items] of areas) for(const [el,cls] of items)el.setAttribute('class',cls+(key===name?' atlasChosen':''));
     for(const [key,b] of buttons)b.setAttribute('aria-pressed',String(key===name));
     for(const [key,label] of markers)label.setAttribute('class','atlasLabel'+(key===name?' atlasNamed':''));
-    feedback.textContent=entries.find(row=>row[0]===name)[3];
+    const i=entries.findIndex(row=>row[0]===name),target=entries[(i+1)%entries.length],other=entries[(i+2)%entries.length];
+    caption.show(name,entries[i][3]);
+    const clues={Atlantic:'Which ocean lies between Europe and North America?',Indian:'Which ocean lies west of Australia?',Arctic:'Which ocean surrounds the North Pole?',Southern:'Which ocean circles Antarctica?',Pacific:'Which ocean appears along both edges of this map?',Ireland:'Which island lies west of Great Britain?',Sweden:'Which country is beside Norway?',Australia:'Which place lies south of the equator and east of the Indian Ocean?','United States':'Which country lies directly south of Canada?','North America':'Which continent includes Mexico?','South America':'Where would you find the Amazon River?',Europe:'Which continent includes Ireland?',Africa:'Which continent contains the Sahara Desert?',Asia:'Which continent includes India?',Antarctica:'Which continent surrounds the South Pole?'};
+    atlasPrediction(caption,'Find another place',clues[target[0]],[target[0],other[0]],target[0],'Look at the map and try the other place.','You found '+target[0]+'.',()=>select(target[0]));
+
   }
 }
 
@@ -113,17 +139,63 @@ function regionalMap(kind,parent,quiz){
    for(const [key,g] of pins)g.setAttribute('class','regionPin'+(key===name?' chosen':''));
    for(const [key,b] of buttons)b.setAttribute('aria-pressed',String(key===name));
  }
+ const caption=quiz?null:atlasCaption(frame);
  const tabs=quiz?null:node('div',undefined,box,'atlasTabs');
- const fact=quiz?null:node('p','',box,'atlasFact');if(fact)fact.setAttribute('aria-live','polite');
+ const river=svgEl('g',{'pointer-events':'none'},svg);
+ let riverChoice=null;
+ const predictions={
+   Dublin:['Which way does the Liffey flow into Dublin Bay?','East','West','Look for the sea on Dublin’s side.'],
+   Belfast:['How can a ship reach Belfast?','Through the lough','Over the hills','Look along the coast.'],
+   Galway:['Which ocean meets Galway Bay?','Atlantic','Pacific','Trace the west coast of Ireland.'],
+   Cork:['Which river would you cross in Cork?','Lee','Liffey','The Liffey runs through Dublin.'],
+   'Giant’s Causeway':['What made the stone columns long ago?','Cooling lava','Moving ice','Think of hot rock becoming solid.'],
+   Limerick:['Travel upstream from Limerick. Which town is also on the Shannon?','Athlone','Galway','Follow the river inland.'],
+   Canberra:['Would a ship sail straight into Canberra?','No, it is inland','Yes, it has a harbour','Look for the space between Canberra and the sea.'],
+   Sydney:['Sail east from Sydney. Which sea will you enter?','Tasman Sea','Irish Sea','Look east of the harbour.'],
+   Perth:['Sail west from Perth. Which ocean will you enter?','Indian Ocean','Pacific Ocean','Look at the water label west of Australia.'],
+   Darwin:['Travel from Uluru to Darwin. Which way do you go?','North','South','Use the north arrow.'],
+   Uluru:['What would you reach first when walking from Uluru?','More inland country','The beach','Look for the distance from the coast.'],
+   'Great Barrier Reef':['Where would a reef explorer look?','Off the north-east coast','In the dry centre','Reefs grow in the sea.'],
+   Hobart:['How could you travel directly from mainland Australia to Hobart?','By boat or plane','By road all the way','Look at the water around Tasmania.']
+ };
+ function riverTrip(){
+   river.replaceChildren();riverChoice=null;
+   const [cx,cy,sx,sy]=shape.projection;
+   // A simplified downstream route through the navigation towns and Lough Derg.
+   const points=[[-7.94,53.42],[-7.99,53.36],[-7.98,53.33],[-8.04,53.30],[-8.045,53.28],[-7.99,53.25],[-7.985,53.19],[-8.08,53.16],[-8.13,53.10],[-8.21,53.092],[-8.25,53.06],[-8.29,53.01],[-8.34,52.97],[-8.37,52.93],[-8.33,52.89],[-8.43,52.82],[-8.445,52.80],[-8.46,52.75],[-8.50,52.72],[-8.54,52.70],[-8.63,52.66]].map(([lon,lat])=>[240+(lon-cx)*sx,160-(lat-cy)*sy]);
+   const d='M'+points.map(p=>p.join(',')).join('L'),path=svgEl('path',{d,fill:'none',stroke:'#007494','stroke-width':3.5,'stroke-linecap':'round','stroke-linejoin':'round'},river);
+   const boat=svgEl('g',{},river);svgEl('path',{d:'M-5 0H5L2 4H-2Z',fill:'#a64b24',stroke:'white','stroke-width':.8},boat);svgEl('path',{d:'M0 -7V0H5Z',fill:'#fff5c9',stroke:'#66461d','stroke-width':.8},boat);
+   function travel(from,to){const length=path.getTotalLength(),start=performance.now();
+     function paint(now){if(!boat.isConnected)return;const t=window.matchMedia('(prefers-reduced-motion: reduce)').matches?1:Math.min(1,(now-start)/900),p=path.getPointAtLength(length*(from+(to-from)*t));boat.setAttribute('transform','translate('+p.x+' '+p.y+')');if(t<1)requestAnimationFrame(paint)}
+     paint(start);
+   }
+   travel(0,0);const launch=btn('Follow the river',()=>{
+     launch.disabled=true;travel(0,.62);caption.challenge.replaceChildren();
+     node('strong','Which city will we reach downstream?',caption.challenge);const row=node('div',undefined,caption.challenge,'mapTools'),msg=node('p','',caption.challenge);
+     riverChoice=name=>{
+       if(name!=='Limerick'){msg.textContent='Trace the blue river from the boat. Which city touches it?';return}
+       riverChoice=null;row.replaceChildren();travel(.62,1);highlight('Limerick');msg.textContent='You reached Limerick on the Shannon!';
+       btn('Trace it yourself',()=>{river.replaceChildren();highlight('Athlone');caption.show('Trace the Shannon','Start in Athlone. Tap the city downstream.');riverChoice=place=>{if(place==='Limerick'){riverChoice=null;buttons.get(place).click()}else caption.fact.textContent='Start at Athlone and look south-west. Try another pin.'}},row,'lPill');
+     };
+     for(const city of ['Galway','Limerick'])btn(city,()=>riverChoice?.(city),row,'lPill');
+   },caption.tools,'primaryButton');
+ }
+
  for(const [name,lon,lat,dx,dy,detail] of stops){
    const [cx,cy,sx,sy]=shape.projection,x=240+(lon-cx)*sx,y=160-(lat-cy)*sy;
    const g=svgEl('g',{class:'regionPin','aria-hidden':'true'},svg);pins.set(name,g);
-   svgEl('circle',{cx:x,cy:y,r:13,fill:'white','fill-opacity':0,'pointer-events':'all'},g);
+   svgEl('circle',{cx:x,cy:y,r:6,fill:'transparent',stroke:'transparent','stroke-width':44,'vector-effect':'non-scaling-stroke','pointer-events':'all'},g);
    svgEl('circle',{cx:x,cy:y,r:5,class:'regionDot'},g);
    const label=svgEl('text',{x:x+dx,y:y+dy,'text-anchor':dx<0?'end':'start',class:'atlasLabel'},g);label.textContent=name;
-   function choose(){if(quiz){quiz.answer(name);return}highlight(name);fact.textContent=detail}
+   function choose(){if(quiz){quiz.answer(name);return}if(riverChoice){riverChoice(name);return}river.replaceChildren();highlight(name);caption.show(name,detail);
+     if(name==='Athlone')riverTrip();else{const [prompt,right,other,hint]=predictions[name];atlasPrediction(caption,'Try a map challenge',prompt,[right,other],right,hint,'You’ve got it. Tap another pin to explore.')}}
    g.onclick=choose;
    if(tabs){const b=btn(name,choose,tabs,'lPill');b.setAttribute('aria-pressed','false');buttons.set(name,b)}
+ }
+ for(const [name,lon,lat] of stops){
+   const [cx,cy,sx,sy]=shape.projection;
+   const top=svgEl('circle',{cx:240+(lon-cx)*sx,cy:160-(lat-cy)*sy,r:7,fill:'transparent','pointer-events':'all'},svg);
+   top.onclick=pins.get(name).onclick;
  }
  return highlight;
 }

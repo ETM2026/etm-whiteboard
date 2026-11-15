@@ -13,26 +13,59 @@ function learningSelect(a,label,options,value){var l=node('label',undefined,a,'l
 function learningHome(){
  stopCoach();mathsBoardView=false;closePrivate();var name=learningName(),p=learningProfile(),a=learningPage('Let’s discover something.','home');club.querySelector('.roomBreadcrumb').hidden=true;
  var heading=club.querySelector('.pageHeading h1');if(heading)heading.textContent='Hello, '+(pl&&pl.guest?name.replace(/^Guest · /,''):name)+'.';
- var hero=node('div',undefined,a,'lHero'),copy=node('div',undefined,hero,'lHeroCopy');node('span','A LITTLE LEARNING. A LOT OF DISCOVERY.',copy,'lEyebrow');node('h2','Where shall we go today?',copy);node('p','A short adventure, chosen just for you. Try something, practise a little, then finish feeling good.',copy);btn('Start today’s adventure  →',learningToday,copy,'primaryButton lPrimary');node('small','About 5–10 minutes · no timer · help when you need it',copy);var art=node('div',undefined,hero,'lHeroArt');art.innerHTML='<svg viewBox="0 0 300 210" aria-hidden="true"><circle cx="155" cy="110" r="87" fill="#d9e9df"/><path d="M55 155Q95 127 150 150Q210 126 260 150V186Q203 167 151 184Q95 167 55 185Z" fill="#fffaf0" stroke="#244c4a" stroke-width="4"/><path d="M151 150V184" stroke="#244c4a" stroke-width="3"/><circle cx="157" cy="86" r="49" fill="#87bdd3" stroke="#244c4a" stroke-width="3"/><path d="M119 59L144 44L166 61L158 83L138 87L135 115L117 99ZM181 95L194 111L182 125L165 118L164 102" fill="#487b5f"/><path d="M224 33L228 45L241 45L231 53L235 66L224 58L213 66L217 53L207 45L220 45Z" fill="#e9b953"/><path d="M74 61Q55 83 78 96" fill="none" stroke="#db8b72" stroke-width="8" stroke-linecap="round"/></svg>';
+ const child=!(pl&&pl.guest)&&['Emily','Tommy','Matthew'].includes(name);
+ if(child){
+   const prompt=node('div',undefined,a,'playHeading');
+   node('h2','What shall we play?',prompt);
+   const recent=name==='Emily'?(pieceStore()[name]||[]).filter(p=>p.lastPlayed).sort((x,y)=>y.lastPlayed-x.lastPlayed)[0]:null;
+   const pairs=()=>launch('memory',{});
+   const choices=name==='Matthew'?[
+     ['🔎','Find a picture',()=>launch('detective')],['✏️','Draw a wish',async()=>{const actor=accessSession;await santaRoom();if(actor===accessSession&&santaView?.record&&santaView.container.isConnected)santaDrawing({title:'',kind:'draw',icon:'gift',note:'',url:'',photo:''},null)}],['🃏','Match the pairs',pairs]
+   ]:name==='Tommy'?[
+     ['📖','Read a word',()=>launch('read')],['🃏','Match the pairs',pairs],['🏁','Play with a friend',()=>window.ETMFriends.open()]
+   ]:[
+     ['🎹',recent?'Continue '+recent.title:'Find the note',recent?()=>openCoach(recent):()=>musicSolo('note')],['🔢','Try a maths challenge',()=>discoveryStart('exchange','challenge')],['🏁','Race a friend',()=>window.ETMFriends.rally('add',2)]
+   ];
+   btn('🔊 Hear my choices',()=>learningSpeak(choices.map(c=>c[1]).join('. ')),prompt,'quietButton');
+   const play=node('div',undefined,a,'childChoices');
+   for(const [symbol,label,action] of choices){
+     const card=btn('',action,play,'childChoice');const art=node('span',symbol,card,'choiceArt');art.setAttribute('aria-hidden','true');paintRoomIcon(art,symbol);node('strong',label,card);
+   }
+   btn('All activities →',learningAllActivities,a,'primaryButton'); 
+ }
  var wishes=btn('',function(){santaRoom()},a,'wishShortcut');node('span','✉',wishes,'wishStamp');node('strong','Santa’s List',wishes);node('span','Open my wishes →',wishes,'wishAction');
+ if(child){updateCoinBadge();return}
+ learningActivityLinks(a);
+}
+function learningAllActivities(){const a=learningPage('All activities','home',home);learningActivityLinks(a)}
+function learningActivityLinks(a){
+ btn('Today’s adventure',learningToday,a,'quietButton');
  var grid=node('div',undefined,a,'lSubjectGrid');[['🔢','Maths','Make numbers make sense',learningMath,'peach'],['📚','Reading','Words, sounds and stories',readRoom,'blue'],['🎹','Music','Listen, read and play',musicRoom,'lilac'],['🌍','Geography','Maps, oceans and journeys',function(){learningSubject('geography')},'mint'],['🔬','Science','Predict, explore and discover',function(){learningSubject('science')},'yellow'],['🏆','Games & competitions','Play, race and cheer each other on',learningPlayTogether,'pink']].forEach(function(c){learningCard(grid,c[0],c[1],c[2],c[3],c[4])});
  var footer=node('div',undefined,a,'lQuickLinks');btn('✏️ Draw',openWhiteboard,footer,'quietButton');btn('🌱 My progress',learningProgress,footer,'quietButton');btn('More',learningMore,footer,'quietButton');if(dadUnlocked())btn('Dad’s space',parentRoom,footer,'quietButton');updateCoinBadge();
+}
+function gameChoiceCard(grid,id,icon,title,copy,original,tint){
+  return learningCard(grid,icon,title,copy,()=>{
+    const a=learningPage(title,'play',learningPlayTogether);
+    btn('Play on two devices',()=>window.ETMFriends.choose(id),a,'primaryButton');
+    const next={notes:'Family Together race',music:'Family Together race',sprint:'Family Together race',tables:'Family rally options',pairs:'Same screen & family options',quiz:'Same screen & quiz maker',draw:'Family whiteboard',word:'Family word game',three:'Family board',four:'Family board',voyage:'Family voyage'};
+    btn(next[id]||'Play on this device',original,a,'quietButton');
+  },tint);
 }
 function learningPlayTogether(){
  var a=learningPage('Games & competitions','play');node('h2','Your turn. My turn. Everyone’s in.',a,'lSectionTitle');node('p','Choose a game and cheer each other on. Every game here works without AI.',a,'lIntro');
  var games=node('div',undefined,a,'lSubjectGrid');
  learningCard(games,'🤝','Play with a friend','Invite a friend for a game and chat',function(){window.ETMFriends.open()},'mint');
- learningCard(games,'🏆','Family quiz','Play a quiz, make a question or open saved questions',learningQuizHome,'pink');
- learningCard(games,'🧠','Matching pairs','Team up or compete · one device or connected screens',matchingMenu,'lilac');
- learningCard(games,'❎','X and O’s','Three in a row · take turns together',function(){newGame('ttt')},'blue');
- learningCard(games,'🔴','Connect four','Drop a counter and plan your next move',function(){newGame('c4')},'peach');
- learningCard(games,'♟','Checkers','A beautiful board · captures, kings and clever moves',function(){familyGameStart('checkers')},'mint');learningCard(games,'✦','UNO','Classic colour-and-number cards · private hands',function(){familyGameStart('cards')},'yellow');if(typeof familyGame!=='undefined'&&familyGame)btn('Continue '+(familyGame.type==='checkers'?'Checkers':'UNO'),familyGameRender,a,'primaryButton');
- node('h2','Friendly races',a,'lPlayHeading');node('p','Use Together to connect devices for maths and music races. Times Tables Rally also lets you take turns on one device.',a,'lIntro');var races=node('div',undefined,a,'lSubjectGrid');
- learningCard(races,'🔢','Maths Sprint','Connected devices · each player’s own level',function(){raceSetup('math')},'mint');
- learningCard(races,'🏁','Times Tables Rally','Take turns or connect screens · equal time',function(){ttRaceSetup()},'yellow');
- learningCard(races,'🎼','Note Race','Connected devices · recognise musical notes',function(){raceSetup('note')},'blue');
- learningCard(races,'🎵','Music Quiz Race','Connected devices · a musical challenge',function(){raceSetup('quiz')},'lilac');
- var extra=node('details',undefined,a,'lDisclosure');node('summary','More playful adventures',extra);var more=node('div',undefined,extra,'lSubjectGrid');learningCard(more,'🔤','Guess the word','Find the missing letters',function(){newGame('hang')},'mint');learningCard(more,'🏴‍☠️','Treasure voyage','A family adventure',function(){launch('treasure')},'yellow');learningCard(more,'🎨','Draw & guess','Draw a clue for someone to guess',function(){launch('draw')},'pink');
+ gameChoiceCard(games,'quiz','🏆','Family quiz','Play a quiz, make a question or open saved questions',learningQuizHome,'pink');
+ gameChoiceCard(games,'pairs','🧠','Matching pairs','Team up or compete · one device or connected screens',matchingMenu,'lilac');
+ gameChoiceCard(games,'three','❎','X and O’s','Three in a row · take turns together',function(){newGame('ttt')},'blue');
+ gameChoiceCard(games,'four','🔴','Connect four','Drop a counter and plan your next move',function(){newGame('c4')},'peach');
+ gameChoiceCard(games,'checkers','♟','Checkers','A beautiful board · captures, kings and clever moves',function(){familyGameStart('checkers')},'mint');gameChoiceCard(games,'uno','✦','UNO','Classic colour-and-number cards · private hands',function(){familyGameStart('cards')},'yellow');if(typeof familyGame!=='undefined'&&familyGame)btn('Continue '+(familyGame.type==='checkers'?'Checkers':'UNO'),familyGameRender,a,'primaryButton');
+ node('h2','Friendly races',a,'lPlayHeading');node('p','Pick a race, then invite your opponent.',a,'lIntro');var races=node('div',undefined,a,'lSubjectGrid');
+ gameChoiceCard(races,'sprint','🔢','Maths Sprint','Connected devices · each player’s own level',function(){raceSetup('math')},'mint');
+ gameChoiceCard(races,'tables','🏁','Times Tables Rally','Take turns or connect screens · equal time',function(){ttRaceSetup()},'yellow');
+ gameChoiceCard(races,'notes','🎼','Note Race','Connected devices · recognise musical notes',function(){raceSetup('note')},'blue');
+ gameChoiceCard(races,'music','🎵','Music Quiz Race','Connected devices · a musical challenge',function(){raceSetup('quiz')},'lilac');
+ var extra=node('details',undefined,a,'lDisclosure');node('summary','More playful adventures',extra);var more=node('div',undefined,extra,'lSubjectGrid');gameChoiceCard(more,'word','🔤','Guess the word','Find the missing letters',function(){newGame('hang')},'mint');gameChoiceCard(more,'voyage','🏴‍☠️','Treasure voyage','A family adventure',function(){launch('treasure')},'yellow');gameChoiceCard(more,'draw','🎨','Draw & guess','Draw a clue for someone to guess',function(){launch('draw')},'pink');
  var links=node('div',undefined,a,'lQuickLinks');btn('Connect family devices',openTogether,links,'quietButton');btn('Back home',home,links,'quietButton');
 }
 function learningMore(){var a=learningPage('A little more to explore','more'),grid=node('div',undefined,a,'lSubjectGrid');learningCard(grid,'📖','Make a story','Create an adventure together',function(){launch('story')},'blue');learningCard(grid,'🎅','Santa’s List','Wishes, pictures and your letter',function(){santaRoom()},'peach');learningCard(grid,'💌','From Dad','Messages to enjoy',function(){launch('messages')},'yellow');}
@@ -58,15 +91,59 @@ function learningQuestion(){
  var dots=node('div',undefined,panel,'lJourney');s.questions.forEach(function(_,i){node('span',i<s.index?'✓':'',dots,i===s.index?'active':'')});var prompt=node('div',undefined,panel,q.visual?.visual==='fraction'?'lMathPrompt lFractionPrompt':q.subject==='maths'?'lMathPrompt':'');node('h2',q.label,prompt,'lQuestionTitle');if(q.visual?.visual==='columns')learningColumnVisual(q.visual,prompt);else if(q.visual&&['count','fraction','clock','shape','money','place'].includes(q.visual.mode))mathVisual(q.visual,prompt,false);if(learningState.preferences&&learningState.preferences.readAloud)learningSpeak(q.label+'. '+q.options.join('. '));btn('🔊 Hear the question',function(){learningSpeak(q.label+'. '+q.options.join('. '))},panel,'lAudio quietButton');
  var mapAnswer;if(q.unit==='ireland'||q.unit==='australia')mapAnswer=regionalMap(q.unit,panel,{options:q.options,answer:function(name){var index=q.options.indexOf(name);if(!s.answered&&index>=0)buttons[index].click()}});
  var choices=node('div',undefined,panel,'lAnswers'),feedback=node('div',undefined,panel,'lFeedback');feedback.setAttribute('role','status');var buttons=[];
- q.options.forEach(function(option,i){var b=btn('',function(){if(s.answered)return;s.answered=true;if(mapAnswer)mapAnswer(q.options[q.correct]);buttons.forEach(function(x){x.disabled=true});var correct=i===q.correct;if(correct)s.score++;if(correct&&!s.helped)s.independent=(s.independent||0)+1;if(s.helped)s.helpedCount=(s.helpedCount||0)+1;b.classList.add(correct?'isCorrect':'isWrong');buttons[q.correct].classList.add('isCorrect');node('strong',correct?'You’ve got it.':'A useful discovery.',feedback);node('p',(correct?'':('The answer is '+q.options[q.correct]+'. '))+q.explanation,feedback);feedback.classList.add('shown');var p=learningProfile();ETM_CORE.record(p,{eventId:crypto.randomUUID(),id:q.id,unit:q.unit,level:s.level,correct:correct,helped:s.helped,at:Date.now()});if(!(pl&&pl.guest))learningStore();var next=btn('Next question →',function(){s.index++;s.helped=false;s.answered=false;learningQuestion()},a,'primaryButton');},choices,'lAnswer');node('span',String.fromCharCode(65+i),b,'lAnswerLetter');node('span',option,b);buttons.push(b)});
- var hint=btn('Help me think',function(){if(s.answered)return;s.helped=true;feedback.replaceChildren();node('strong','Let’s think about the idea.',feedback);var unit=ETM_DATA.units.find(function(u){return u.id===q.unit});node('p',unit?unit.lesson[s.level]:q.explanation,feedback);if(q.visual&&!['count','fraction','clock','shape','money','place'].includes(q.visual.mode)&&q.visual.visual!=='columns'&&!feedback.querySelector('.mathVisual'))mathVisual(q.visual,feedback,true);feedback.classList.add('shown');},panel,'quietButton');
+ function showHint(){
+   feedback.replaceChildren();feedback.classList.add('shown');
+   const v=q.visual||{},topic=v.mode||q.unit.replace('math-','');
+   const match=q.label.match(/^(\d+)\s*[+−–-]\s*(\d+)/);
+   const left=v.a??(match?+match[1]:NaN),right=v.b??(match?+match[2]:NaN);
+   if(['add','sub'].includes(topic)&&Number.isInteger(left)&&Number.isInteger(right)&&left>=0&&right>=0&&(topic==='add'||right<=left)&&left<=20&&right<=12){
+     const start=topic==='sub'?left-right:left;
+     window.ETMTables.drawCounters(window.ETMTables.fact(topic,right,start),feedback);
+     node('p',topic==='sub'?'Cross out '+right+'. How many are left?':'Put the two groups together. How many altogether?',feedback);
+   }else{
+     const unit=ETM_DATA.units.find(u=>u.id===q.unit);
+     const hints={fraction:'Count all the equal parts. Now count just the coloured parts.',fractions:'Find the whole and count its equal parts.',add:'Start with the bigger number. Add the tens, then the units.',sub:'Start with the whole. Take away the tens, then the units.',times:'Make equal groups. Count each group once.',clock:'Look at the short hand first. Then count minutes with the long hand.',shape:'Trace the outline and count the corners.',money:'Start with the largest coin. Count on as you add each coin.',place:'Read each column from left to right.',count:'Touch each object once as you count.',bonds:'Count on from the part you already have.',divide:'Share one at a time into equal groups.'};
+     const lesson=unit?.lesson[s.level];
+     node('p',hints[topic]||(lesson&&!String(lesson).toLowerCase().includes(String(q.options[q.correct]).toLowerCase())?lesson:'Look for the clue in the question. Which choice fits it?'),feedback);
+   }
+ }
+ let attempts=0;
+ q.options.forEach(function(option,i){
+   const b=btn('',function(){
+     if(s.answered||b.disabled)return;
+     const correct=i===q.correct;
+     if(!attempts){
+       if(correct&&!s.helped)s.independent=(s.independent||0)+1;
+       if(s.helped||!correct)s.helpedCount=(s.helpedCount||0)+1;
+       ETM_CORE.record(learningProfile(),{eventId:crypto.randomUUID(),id:q.id,unit:q.unit,level:s.level,correct,helped:!!s.helped,at:Date.now()});
+       if(!pl.guest)learningStore();
+     }
+     attempts++;
+     if(!correct&&attempts===1){s.helped=true;b.disabled=true;b.classList.add('isWrong');showHint();node('strong','Have another go.',feedback);return}
+     s.answered=true;if(correct)s.score++;
+     if(mapAnswer)mapAnswer(q.options[q.correct]);buttons.forEach(x=>x.disabled=true);
+     b.classList.add(correct?'isCorrect':'isWrong');buttons[q.correct].classList.add('isCorrect');
+     feedback.replaceChildren();feedback.classList.add('shown');
+     node('strong',correct?(attempts===1?'You’ve got it.':'You worked it out!'):'Let’s see how it works.',feedback);
+     node('p',(correct?'':'The answer is '+q.options[q.correct]+'. ')+q.explanation,feedback);
+     hint.hidden=true;
+     btn(s.index+1===s.questions.length?'See my adventure':'Next question →',()=>{s.index++;s.helped=false;s.answered=false;learningQuestion()},a,'primaryButton');
+   },choices,'lAnswer');node('span',String.fromCharCode(65+i),b,'lAnswerLetter');node('span',option,b);buttons.push(b);
+ });
+ const hint=btn('Help me think',()=>{if(!s.answered){s.helped=true;showHint()}},panel,'quietButton');
  if(q.subject==='maths'&&typeof tutorPad==='function')tutorPad(panel);node('p','Mistakes help us choose what to practise next.',a,'lReassurance');
 }
-function learningComplete(){var s=learningSession,a=learningPage('Look what you explored.','learn');var comparison=studyRecord(learningName(),{id:s.resultId||(s.resultId=crypto.randomUUID()),key:'practice:'+s.unit+':'+s.level+':'+JSON.stringify(s.config||{}),label:s.unit,good:s.independent||0,total:s.questions.length,detail:'Independent first answers · stage '+s.level});studyResult(a,'Independent first-try accuracy',s.independent||0,s.questions.length,comparison,(s.helpedCount||0)+' helped answers · '+s.score+' correct overall.');node('div','✦',a,'lCompletionStar');node('h2','A little stronger, one step at a time.',a,'lFinishTitle');node('p','You explored '+s.questions.length+' questions. '+s.score+' correct today. We will revisit the tricky ideas another day.',a,'lFinishCopy');if(s.kind==='today'){btn('One little number adventure  →',function(){learningMathAdventure(true)},a,'primaryButton lPrimary');}else{node('p',s.kind==='today-math'?'Today’s adventure is complete. You can stop here or choose something you enjoy.':'That is a good place to finish, or explore another idea.',a,'lFinishCopy');btn('Back home',home,a,'primaryButton lPrimary');btn('See my progress',learningProgress,a,'quietButton')}learningSession=null;}
+function learningComplete(){var s=learningSession,a=learningPage('Look what you explored.','learn');var comparison=studyRecord(learningName(),{id:s.resultId||(s.resultId=crypto.randomUUID()),key:'practice:'+s.unit+':'+s.level+':'+JSON.stringify(s.config||{}),label:s.unit,good:s.independent||0,total:s.questions.length,detail:'Independent first answers · stage '+s.level});studyResult(a,'Independent first-try accuracy',s.independent||0,s.questions.length,comparison,(s.helpedCount||0)+' helped answers · '+s.score+' correct overall.');const unit=ETM_DATA.units.find(u=>u.id===s.unit),topic=s.unit.replace('math-','');
+ const names={add:'addition',sub:'subtraction',times:'equal groups',fractions:'fractions',mixed:'mixed sums',bonds:'number bonds',place:'place value'};
+ const skill=unit?unit.title:names[topic]||topic;
+ node('h2','You practised '+skill+'.',a,'lFinishTitle');
+ node('p',s.independent===s.questions.length?'You solved every question on your first try.':'You solved '+(s.independent||0)+' on your own on the first try. A fresh round uses the same skill.',a,'lFinishCopy');
+ btn('Try more '+skill,()=>unit?learningStartUnit(unit,s.level,false):learningStartMath(topic,false,s.config),a,'primaryButton');
+ if(s.kind==='today'){btn('One little number adventure  →',function(){learningMathAdventure(true)},a,'primaryButton lPrimary');}else{node('p',s.kind==='today-math'?'Today’s adventure is complete. You can stop here or choose something you enjoy.':'That is a good place to finish, or explore another idea.',a,'lFinishCopy');btn('Back home',home,a,'primaryButton lPrimary');btn('See my progress',learningProgress,a,'quietButton')}learningSession=null;}
 function learningMath(){
  var a=learningPage('Maths','maths');node('h2','Make numbers make sense.',a,'lSectionTitle');node('p','See an idea, try it yourself, or practise together.',a,'lIntro');var grid=node('div',undefined,a,'lSubjectGrid');
  learningCard(grid,'🔢','Learn & practise','One place for numbers, fractions, time and more',learningPracticeSetup,'peach');
- learningCard(grid,'×','Times tables','Explore the groups, practise, then try a Rally',ttHome,'mint');
+ learningCard(grid,'±','Number tables','Addition, subtraction and times tables',ttHome,'mint');
  learningCard(grid,'🔎','Homework helper','Method hints and separate practice',learningHomework,'blue');
  if(dadUnlocked())learningCard(grid,'🤝','Practise with Dad','Choose a child and send a shared question',teacherMaths,'lilac');
  btn('My progress',learningProgress,a,'quietButton');
@@ -77,14 +154,14 @@ function learningPracticeSetup(){
  var extras=node('details',undefined,a,'lDisclosure');node('summary','Number range & question style',extras);var range=learningSelect(extras,'Numbers',[[0,'Match my stage']].concat([5,10,20,30,50,100,1000].map(function(n){return [n,'To '+n]})),0),style=learningSelect(extras,'Question style',[['plain','Standard'],['column','Column sums'],['story','Word problems']],'plain');if(dadUnlocked()){var o=node('option','Expert: decimals and percentages',style);o.value='expert'}
  var model=node('div',undefined,a);btn('Show me the idea',function(){model.replaceChildren();var t=topic.value;if(['money','shape','clock'].includes(t)){var q=buildMathQuestion({range:30,style:'plain'},t);mathVisual(q,model,false);node('p','A separate example. Look at the picture and describe what you notice.',model,'lSmall')}else learningModel(t==='fractions'?'fractions':t==='count'?'counting':t==='divide'?'groups':'place',model)},a,'quietButton');
  btn('Start three questions →',function(){var l=level.value==='auto'?ETM_CORE.stage(learningProfile(),'math-'+topic.value):+level.value,settings={level:+range.value?(+range.value<=10?0:+range.value<=30?1:2):l,range:+range.value||[10,30,100][l],style:style.value};learningStartMath(topic.value,false,settings)},a,'primaryButton lPrimary');
- btn('Looking for multiplication? Times tables →',ttHome,a,'quietButton');
+ btn('Addition, subtraction & times tables →',ttHome,a,'quietButton');
 }
 function learningHomework(){
  var a=learningPage('Homework helper','maths',learningMath);node('h2','Your homework. Your own thinking.',a,'lSectionTitle');node('p','Choose the skill on your page. These hints explain the method; use different examples for practice.',a,'lIntro');
  var topics=[['add','Addition'],['sub','Subtraction'],['times','Multiplication'],['divide','Division'],['place','Place value'],['fractions','Fractions'],['clock','Time']],topic=learningSelect(a,'What are you working on?',topics),hints=node('div',undefined,a,'lFeedback shown');
  var copy={add:'Line up tens and units. Combine matching places. Can you exchange ten ones for a ten?',sub:'Start with the whole amount. Line up the places. Would exchanging a ten help you take away the units?',times:'Make equal groups. How many groups are there, and how many things are in each?',divide:'Share into equal groups. Check that every group has the same amount.',place:'A digit’s position tells you its value. Look at the ones, tens and hundreds columns.',fractions:'Find the whole. Split it into equal parts. How many equal parts does the fraction describe?',clock:'Read the short hour hand first, then count minutes around the clock.'};
  function explain(){hints.replaceChildren();node('p',copy[topic.value],hints)}topic.onchange=explain;explain();var model=node('div',undefined,a);
- btn('Show a separate example',function(){model.replaceChildren();learningModel(topic.value==='fractions'?'fractions':['times','divide'].includes(topic.value)?'groups':topic.value==='clock'?'clock':'place',model)},a,'quietButton');
+ btn('Show a separate example',function(){model.replaceChildren();if(topic.value==='sub'){const panel=node('section',undefined,model,'numberStudio');node('h3','A different sum: 32 − 7',panel);const line=node('p','Three tens and two units. Can you take seven units away?',panel);btn('Exchange one ten',function(){this.disabled=true;line.textContent='Two tens and twelve units. Take seven units away. How many are left?';window.ETMTables.drawCounters(window.ETMTables.fact('sub',7,5),panel)},panel,'quietButton');return}learningModel(topic.value==='fractions'?'fractions':['times','divide'].includes(topic.value)?'groups':topic.value==='clock'?'clock':'place',model)},a,'quietButton');
  btn('Try separate practice',function(){if(topic.value==='times'){ttHome();return}learningStartMath(topic.value)},a,'primaryButton lPrimary');
  if(learningName()==='Emily'&&typeof tutorEndpoint==='function'&&tutorEndpoint())tutorApi('status').then(function(status){if(!a.isConnected)return;tutorState=status;if(status.photoReady)btn('Photograph the maths',function(){tutorPhoto('scan')},a,'quietButton')}).catch(function(){});
  node('p','Standard hints always work without AI. Photo help appears only when Dad has enabled it and the privacy requirements are met.',a,'lSmall');
@@ -140,7 +217,7 @@ function learningModel(kind,parent){
 
 function learningQuizHome(){
  var a=learningPage('Family quiz','quiz',learningPlayTogether),grid=node('div',undefined,a,'lSubjectGrid');node('p','Play at your own stage, or become the family quiz master.',a,'lIntro');
- learningCard(grid,'🏆','Play a quiz','Each player chooses a topic and stage',learningFamilySetup,'pink');learningCard(grid,'✏️','Make a question','Write your own family challenge',function(){launch('challenge')},'mint');learningCard(grid,'💾','Saved questions','Your family’s questions and Dad’s reviewed draft',learningSavedQuizzes,'blue');
+ learningCard(grid,'🤝','Quiz on two devices','Invite someone and choose your own topics',()=>window.ETMFriends.choose('quiz'),'blue');learningCard(grid,'🏆','Play a quiz','Each player chooses a topic and stage',learningFamilySetup,'pink');learningCard(grid,'✏️','Make a question','Write your own family challenge',function(){launch('challenge')},'mint');learningCard(grid,'💾','Saved questions','Your family’s questions and Dad’s reviewed draft',learningSavedQuizzes,'blue');
  if(dadUnlocked())btn('Generate an AI draft',labQuizSetup,a,'quietButton');
 }
 function learningSavedQuizzes(){
@@ -171,7 +248,16 @@ function learningParent(){
  if(!dadUnlocked())return;var a=learningPage('Dad’s space','parent'),grid=node('div',undefined,a,'lSubjectGrid');learningCard(grid,'🌱','Learning & progress','Starting stages, reading, music and each child’s progress',learningDad,'mint');learningCard(grid,'✨','AI & spending','One AI switch, feature controls and shared allowance',learningAISettings,'lilac');learningCard(grid,'🔑','Family settings','PINs, connection, private goals and usage',learningFamilySettings,'peach');learningCard(grid,'💾','Backup & restore','Keep the family’s saved work safe',learningBackups,'blue');var advanced=node('details',undefined,a,'lDisclosure');node('summary','Advanced · adult test tools',advanced);node('p','Use your own adult or synthetic material. Tests stay separate from the children’s learning.',advanced,'lSmall');btn('Open AI test tools',labHome,advanced,'quietButton');
 }
 function learningFamilySettings(){
- if(!dadUnlocked())return;var a=learningPage('Family settings','parent',parentRoom),grid=node('div',undefined,a,'lSubjectGrid');[['🔑','Family PINs','Manage the children’s sign-in keys',familyAccessRoom],['🤝','Family connection','Invitations for tablets and other devices',connectionSettings],['⭐','Private star charts','Personal goals, shared only by Dad',showStars],['📊','Usage','Visits and guest activity',usagePage],['↩','Correct a result','Remove or restore an accidental session',correctionRoom],['💌','Record a message','Leave a hello for the children',function(){launch('messages')}]].forEach(function(x){learningCard(grid,x[0],x[1],x[2],x[3],'blue')});btn('Camera & sound',openTogether,a,'quietButton');btn('Lock Dad’s tools',function(){lockParent();entryScreen(true)},a,'quietButton');
+ if(!dadUnlocked())return;var a=learningPage('Family settings','parent',parentRoom),grid=node('div',undefined,a,'lSubjectGrid');[['🔑','Family PINs','Manage the children’s sign-in keys',familyAccessRoom],['🤝','Family connection','Invitations for tablets and other devices',connectionSettings],['⭐','Private star charts','Personal goals, shared only by Dad',showStars],['📊','Usage','Visits and guest activity',usagePage],['↩','Correct a result','Remove or restore an accidental session',correctionRoom],['💌','Record a message','Leave a hello for the children',function(){launch('messages')}]].forEach(function(x){learningCard(grid,x[0],x[1],x[2],x[3],'blue')});if(accessManifest){
+   const allow=node('label',undefined,a,'friendSetting'),check=node('input',undefined,allow);
+   check.type='checkbox';check.checked=accessManifest.root.friendChat===true;
+   node('span','Allow messages in invited friend games',allow);
+   check.onchange=async()=>{if(!dadUnlocked())return;check.disabled=true;const original=accessManifest.root.friendChat;
+     try{accessManifest.root.friendChat=check.checked;await saveManifest();notice('Friend chat setting saved.')}
+     catch{if(original===undefined)delete accessManifest.root.friendChat;else accessManifest.root.friendChat=original;check.checked=original===true;notice('Could not save the setting. Try again.')}
+     finally{check.disabled=false}
+   };
+ }btn('Camera & sound',openTogether,a,'quietButton');btn('Lock Dad’s tools',function(){lockParent();entryScreen(true)},a,'quietButton');
 }
 function learningBackups(){if(!dadUnlocked())return;var a=learningPage('Backup & restore','parent',parentRoom);node('p','Export one family backup before changing devices. New practice history is local to this browser; it is not automatically synchronised.',a,'lIntro');btn('Download family backup',exportFamilyBackup,a,'primaryButton');btn('Restore family backup',importFamilyBackup,a,'quietButton');}
 function learningMusic(){

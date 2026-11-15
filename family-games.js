@@ -1,6 +1,18 @@
 // Local family games. No AI, network calls, or changes to learning records.
 var ETM_GAMES=(function(){
  function shuffle(a,rng){a=a.slice();rng=rng||Math.random;for(var i=a.length-1;i;i--){var j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+ function winningLine(board,cols,need,empty){
+   for(let i=0;i<board.length;i++){
+     if(board[i]===empty)continue;
+     for(const [dx,dy,label] of [[1,0,'across'],[0,1,'down'],[1,1,'diagonally'],[-1,1,'diagonally']]){
+       const end=i%cols+dx*(need-1);
+       if(end<0||end>=cols)continue;
+       const cells=Array.from({length:need},(_,k)=>i+k*(cols*dy+dx));
+       if(cells.every(n=>n<board.length&&board[n]===board[i]))return {cells,label,mark:board[i]};
+     }
+   }
+   return null;
+ }
  function checkers(){var b=Array(64).fill(0);for(var i=0;i<64;i++)if((Math.floor(i/8)+i%8)%2)b[i]=i<24?-1:i>=40?1:0;var s={board:b,turn:1,chain:null,winner:null,quiet:0,positions:{},canDraw:false};remember(s);return s}
  function jumps(s,i){var p=s.board[i];if(!p)return [];var r=Math.floor(i/8),c=i%8,dirs=Math.abs(p)===2?[-1,1]:[p>0?-1:1],out=[];dirs.forEach(function(dr){[-1,1].forEach(function(dc){var rr=r+2*dr,cc=c+2*dc,mid=(r+dr)*8+c+dc;if(rr>=0&&rr<8&&cc>=0&&cc<8&&s.board[mid]*p<0&&!s.board[rr*8+cc])out.push({from:i,to:rr*8+cc,take:mid})})});return out}
  function moves(s){if(s.winner!==null)return [];var own=s.board.map(function(p,i){return p*s.turn>0?i:-1}).filter(function(i){return i>=0}),cap=own.flatMap(function(i){return s.chain===null||s.chain===i?jumps(s,i):[]});if(cap.length||s.chain!==null)return cap;return own.flatMap(function(i){var p=s.board[i],r=Math.floor(i/8),c=i%8,out=[];(Math.abs(p)===2?[-1,1]:[p>0?-1:1]).forEach(function(dr){[-1,1].forEach(function(dc){var rr=r+dr,cc=c+dc;if(rr>=0&&rr<8&&cc>=0&&cc<8&&!s.board[rr*8+cc])out.push({from:i,to:rr*8+cc,take:null})})});return out})}
@@ -24,7 +36,7 @@ var ETM_GAMES=(function(){
  function resolve(s,challenge){var p=s.pending;if(!p||s.winner!==null)return null;s.oneWindow=null;var proof={cards:p.proof,illegal:p.illegal,color:p.oldColor,actor:p.actor,challenger:p.target};if(challenge&&p.illegal){drawCards(s,p.actor,4);s.turn=p.target;s.message='Challenge successful. '+s.players[p.actor].name+' draws four; you keep your turn.'}else{drawCards(s,p.target,challenge?6:4);s.turn=next(s,p.target);s.message=challenge?'Challenge unsuccessful: six cards drawn and turn missed.':'Four cards drawn and turn missed.'}s.pending=null;if(p.empty&&!(challenge&&p.illegal))finish(s,p.actor);return proof}
  function catchOne(s,who){var offender=s.oneWindow;if(offender===null||who===offender||s.winner!==null)return false;drawCards(s,offender,2);s.oneWindow=null;s.message=s.players[offender].name+' missed the one-card call and draws two.';return true}
  function opening(s,c){if(!s.chooseOpeningColor||!colors.includes(c))return false;s.color=c;s.chooseOpeningColor=false;s.message='Match the colour, number or symbol.';return true}
- return {checkers:checkers,moves:moves,move:move,claimDraw:claim,cards:cardGame,cardDeck:deck,playable:playable,play:play,draw:draw,pass:pass,resolve:resolve,catchOne:catchOne,opening:opening,nextRound:round,colors:colors,points:points};
+ return {winningLine,checkers:checkers,moves:moves,move:move,claimDraw:claim,cards:cardGame,cardDeck:deck,playable:playable,play:play,draw:draw,pass:pass,resolve:resolve,catchOne:catchOne,opening:opening,nextRound:round,colors:colors,points:points};
 })();
 var familyGame=null;
 var familyGuestHints=true;
@@ -52,3 +64,5 @@ function familyCardsRender(){var f=familyGame,s=f.game,a=learningPage('UNO','pla
  if(f.wild){node('h2','Choose the next colour',a,'lPlayHeading');if(hints&&f.wild.v==='draw4'&&s.players[s.turn].hand.some(function(c){return c.c===s.color}))node('p','You hold the active colour. Playing +4 would be illegal; a successful challenge makes you draw four.',a,'fgWarning');familyColorPicker(a,function(c){apply(function(){return ETM_GAMES.play(s,f.wild.id,c,f.armed)})});btn('Cancel colour choice',function(){f.wild=null;familyCardsRender()},a,'quietButton');return}
  var actions=node('div',undefined,a,'fgCardActions');if(!hints||s.players[s.turn].hand.length===2){var one=btn(f.armed?'✓ UNO call ready':'Call UNO with my next card',function(){f.armed=!f.armed;familyCardsRender()},actions,'fgOne '+(f.armed?'armed':''));one.setAttribute('aria-pressed',f.armed)}if(s.drawn===null)btn('Draw one card',function(){apply(function(){return ETM_GAMES.draw(s)})},actions,'primaryButton');else btn('Pass without playing the drawn card',function(){apply(function(){return ETM_GAMES.pass(s)})},actions,'primaryButton');btn('Hide my hand',function(){f.visible=false;familyCardsRender()},actions,'quietButton');familyGameRules('cards',a)}
 function familyColorPicker(parent,select){var colors=node('div',undefined,parent,'fgColorPicker');ETM_GAMES.colors.forEach(function(c){btn(c,function(){select(c)},colors,'fgColor '+c)})}
+
+if(typeof window!=='undefined')window.ETMWinningLine=ETM_GAMES.winningLine;

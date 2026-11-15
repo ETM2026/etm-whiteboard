@@ -33,24 +33,38 @@ function endCall(text='',tell=true){
   activeCall=null;
   if(tell)signal(call,'end');
   clearTimeout(call.timer);
-  call.stream?.getTracks().forEach(track=>track.stop());call.pc?.close();call.panel.remove();
+  call.stream?.getTracks().forEach(track=>track.stop());call.pc?.close();call.panel.remove();call.badge?.remove();
   if(text)notice(text);
+}
+function showCallControls(call,open,focus=false){
+  if(!current(call))return;
+  if(!call.badge){
+    call.badge=btn('☎ Call',()=>showCallControls(call,call.panel.inert,true),appHeader,'liveCallBadge');
+    call.badge.setAttribute('aria-controls',call.panel.id);
+    call.hide=btn('Back to activity',()=>showCallControls(call,false,true),call.panel,'primaryButton');
+  }
+  call.panel.inert=!open;
+  call.panel.classList.toggle('callInHeader',!open);
+  call.badge.setAttribute('aria-expanded',String(open));
+  call.badge.setAttribute('aria-label','Call controls · '+call.other.name);
+  if(focus)(open?call.hide:call.badge).focus();
 }
 function newCall(other,id,video,outgoing){
   if(!familyActor()||activeCall)return;
   const panel=node('section',undefined,document.body,'privateCall');
   const call=activeCall={id,other,video,outgoing,session:accessSession,phase:outgoing?'ringing':'invited',ice:[],panel};
+  panel.id='etmPrivateCall';
   const title=node('strong',(video?'Video call':'Voice call')+' with '+other.name,panel);
   call.status=node('p',outgoing?'Ringing…':other.name+' is calling you.',panel);call.status.setAttribute('role','status');
   if(!outgoing)call.accept=btn('Answer',()=>capture(call),panel,'primaryButton');
-  btn(outgoing?'End call':'Close call',()=>endCall(),panel,'quietButton');
+  call.end=btn(outgoing?'End call':'Decline call',()=>endCall(),panel,'quietButton');
   call.timer=setTimeout(()=>{if(current(call))endCall('The call timed out.')},60000);
   if(outgoing)signal(call,'invite');
   return call;
 }
 async function capture(call){
   if(!current(call)||!['ringing','invited'].includes(call.phase))return;
-  call.phase='connecting';call.accept?.remove();call.status.textContent='Connecting…';
+  call.phase='connecting';call.end.textContent='End call';call.accept?.remove();call.status.textContent='Connecting…';
   try{
     window.ETMPiano?.releasePlayback?.();
     const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:call.video});
@@ -61,15 +75,23 @@ async function capture(call){
     pc.onicecandidate=e=>{if(e.candidate&&current(call))signal(call,'ice',{candidate:e.candidate.toJSON()})};
     pc.onconnectionstatechange=()=>{
       if(!current(call))return;
-      if(pc.connectionState==='connected'){clearTimeout(call.timer);call.phase='live';call.status.textContent='Private call with '+call.other.name}
+      if(pc.connectionState==='connected'){clearTimeout(call.timer);if(call.phase!=='live'){call.phase='live';call.status.textContent='Private call with '+call.other.name;showCallControls(call,!!call.needsPlay)}}
       if(['closed','failed','disconnected'].includes(pc.connectionState))endCall('Call ended.');
     };
     pc.ontrack=e=>{
       if(!current(call))return;
-      if(!call.player){
-        const player=call.player=node('video',undefined,call.panel);player.autoplay=true;player.playsInline=true;player.controls=true;
+      const stream=e.streams[0];if(!stream)return;
+      if(e.track.kind==='video'){
+        if(!call.picture){call.picture=node('video',undefined,call.panel);call.picture.autoplay=true;call.picture.playsInline=true;call.picture.muted=true}
+        call.picture.srcObject=stream;call.picture.play()?.catch(()=>{});
+      }else if(!call.player){
+        call.player=node('audio',undefined,call.panel);call.player.autoplay=true;call.player.srcObject=stream;
+        call.player.play()?.catch(()=>{
+          if(!current(call))return;call.needsPlay=true;showCallControls(call,true);
+          call.status.textContent='Tap to hear '+call.other.name+'.';
+          const play=btn('Play call audio',async()=>{try{await call.player.play();call.needsPlay=false;play.remove();showCallControls(call,false,true)}catch{notice('Check audio output and try again.')}},call.panel,'primaryButton');
+        });
       }
-      call.player.srcObject=e.streams[0];call.player.play()?.catch(()=>{call.status.textContent='Tap Play to hear the call.'});
     };
     for(const track of stream.getTracks()){
       const label=track.kind==='video'?'Camera':'Mic';
