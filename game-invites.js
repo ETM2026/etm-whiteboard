@@ -3,32 +3,38 @@
 window.ETMGameInvites=(function(){
   const prompts=new Map(),sent=new Map();
   let current=null, actor=accessSession;
+  let badge;
+  function count(){
+    if(!badge&&typeof appHeader!=='undefined')badge=btn('',()=>{if(current)return;const first=prompts.values().next().value;if(first){first.parked=false;showNext()}},appHeader,'inviteBadge');
+    if(badge){badge.hidden=!prompts.size;badge.textContent='Invites ('+prompts.size+')';badge.setAttribute('aria-live','polite')}
+  }
   function close(id){
     const p=prompts.get(id);if(!p)return;
-    clearTimeout(p.timer);prompts.delete(id);
+    clearTimeout(p.timer);prompts.delete(id);count();
     if(current===id){current=null;p.dialog?.remove();showNext()}
   }
   function showNext(){
     if(current||!prompts.size)return;
-    const [id,p]=prompts.entries().next().value;current=id;
+    const next=Array.from(prompts.entries()).find(([,p])=>!p.parked);if(!next)return;const [id,p]=next;current=id;
     const d=p.dialog=node('dialog',undefined,document.body,'gameInviteCard');
     const title=node('h2',p.title,d);title.id='etmInviteTitle';d.setAttribute('aria-labelledby',title.id);
     if(p.text)node('p',p.text,d);
     p.options?.(d);
     const yes=btn(p.yes,()=>{close(id);p.accept()},d,'primaryButton');
     const no=()=>{close(id);p.decline?.()};
-    btn('Not now',no,d,'quietButton');d.oncancel=e=>{e.preventDefault();no()};
+    const park=()=>{p.parked=true;current=null;d.remove();p.dialog=null;count();showNext()};
+    btn('Decide later',park,d,'quietButton');btn('Not now',no,d,'quietButton');d.oncancel=e=>{e.preventDefault();park()};
     if(typeof d.showModal==='function')d.showModal();else d.setAttribute('open','');
-    yes.focus();p.shown?.();
+    yes.focus();if(!p.seen){p.seen=true;p.shown?.()}
   }
   function prompt(id,options){
     if(actor!==accessSession)reset();if(prompts.has(id))return;
     options.timer=setTimeout(()=>close(id),90000);
-    prompts.set(id,options);showNext();
+    prompts.set(id,options);count();showNext();
   }
   function reset(){
     for(const p of prompts.values()){clearTimeout(p.timer);p.dialog?.remove()}
-    current=null;prompts.clear();
+    current=null;prompts.clear();count();
     for(const s of sent.values())clearTimeout(s.timer);
     sent.clear();actor=accessSession;
   }
@@ -41,10 +47,10 @@ window.ETMGameInvites=(function(){
   }
   async function invite(name,visit,update,onJoin){
     if(actor!==accessSession)reset();const targets=devices().filter(d=>d.name===name);
-    if(!targets.length||!memberKeys){update('Waiting for '+name+' to come online. You can also share the link.');return}
+    if(!targets.length||!memberKeys){update('Waiting for '+name+' to come online.');return}
     const id=crypto.randomUUID(),s={actor:accessSession,targets,update,onJoin,name,declined:new Set()};sent.set(id,s);
     update('Waiting for delivery to '+name+'…');
-    s.timer=setTimeout(()=>{forget(id);update('No reply from '+name+'. Invite again or share the link.')},90000);
+    s.timer=setTimeout(()=>{forget(id);update('No reply from '+name+'. Invite again.')},90000);
     try{
       for(const d of targets){
         const iv=crypto.getRandomValues(new Uint8Array(12));
@@ -52,7 +58,7 @@ window.ETMGameInvites=(function(){
         if(sent.get(id)!==s||accessSession!==s.actor)return;
         await send('etm-game-invite-19',{to:d.id,name,id,kind:'offer',key:memberKeys.public,iv:b64(iv),box:b64(box)});
       }
-    }catch{forget(id);update('Couldn’t deliver the invitation. Try again or share the link.')}
+    }catch{forget(id);update('Couldn’t deliver the invitation. Try again.')}
     return id;
   }
   // Reuse the family connection for named games, including its offline-tolerant relay.
@@ -61,7 +67,7 @@ window.ETMGameInvites=(function(){
   async function channel(id,other){
     const key=await letterKey(other.key),session=accessSession,queue=new Map(),inbox=new Map(),events={};
     let next=1,received=0,chain=Promise.resolve(),rx=Promise.resolve();
-    const wire={open:true,family:true,remoteName:other.name,on(type,fn){(events[type]??=[]).push(fn)},
+    const wire={get pending(){return queue.size},open:true,family:true,remoteName:other.name,on(type,fn){(events[type]??=[]).push(fn)},
       send(data){
         if(!wire.open||queue.size>=48)throw Error('Family connection is busy.');
         const n=next++;queue.set(n,null);
@@ -110,7 +116,7 @@ window.ETMGameInvites=(function(){
       if(s?.actor!==session||!s.targets.some(p=>p.id===b.from&&p.name===b.name))return;
       if(d.kind==='later'){s.declined.add(b.from);if(s.declined.size!==s.targets.length)return}
       s.update(d.kind==='seen'?b.name+' can see your invitation.':d.kind==='joining'?b.name+' tapped Join. Connecting…':b.name+' chose Not now.');
-      if(d.kind==='joining')s.onJoin?.(d.id,s.targets.find(p=>p.id===b.from));
+      if(d.kind==='joining')Promise.resolve(s.onJoin?.(d.id,s.targets.find(p=>p.id===b.from))).catch(()=>s.update('Could not open the connection. Invite again.'));
       if(d.kind!=='seen')forget(d.id,d.kind==='joining');
       return;
     }
@@ -118,10 +124,10 @@ window.ETMGameInvites=(function(){
     try{
       const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(d.iv)},await letterKey(d.key),unb64(d.box));
       if(accessSession!==session)return;
-      const visit=new TextDecoder().decode(clear),info=window.ETMFriends.describe(visit);if(!info)return;
+      const visit=new TextDecoder().decode(clear),drawing=visit==='draw-together-v1',handler=drawing?window.ETMDraw:window.ETMFriends,info=handler?.describe(visit);if(!info)return;
       const reply=kind=>{if(session===accessSession)send('etm-game-invite-19',{to:b.from,name:b.name,id:d.id,kind})};
-      prompt(key,{title:b.name+' invites you to '+info.title,text:'Play together on your own screens.',yes:info.yes,
-        options:info.options,shown:()=>reply('seen'),accept:()=>{reply('joining');window.ETMFriends.joinVisit(visit,{id:b.from,name:b.name,key:d.key},d.id)},decline:()=>reply('later')});
+      prompt(key,{title:b.name+' invites you to '+info.title,text:drawing?'You can both draw on the same picture.':'Play together on your own screens.',yes:info.yes,
+        options:info.options,shown:()=>reply('seen'),accept:()=>{reply('joining');handler.joinVisit(visit,{id:b.from,name:b.name,key:d.key},d.id)},decline:()=>reply('later')});
     }catch{/* A different family device cannot open this invitation. */}
   }
   setInterval(()=>{if(actor!==accessSession)reset()},500);

@@ -3,7 +3,14 @@ var learningState=null,learningGuest=null,learningSession=null,learningAI=null;
 var learningKey='etmLearningV2:'+accessRoom;
 function learningLoad(){try{var raw=localStorage.getItem(learningKey),s=raw&&JSON.parse(raw);learningState=ETM_CORE.validateState(s)?s:ETM_CORE.fresh()}catch(e){learningState=ETM_CORE.fresh()}return learningState}
 learningLoad();
-function learningStore(){try{var old=localStorage.getItem(learningKey);if(old)localStorage.setItem(learningKey+':previous',old);localStorage.setItem(learningKey,JSON.stringify(learningState));return true}catch(e){notice('Progress could not be saved on this browser. Ask Dad to check storage.');return false}}
+function learningStore(){
+  const old=localStorage.getItem(learningKey),next=JSON.stringify(learningState);
+  if(old===next)return true;
+  if(!storagePut(learningKey,next))return false;
+  // The optional recovery copy must never prevent the current save.
+  if(old)try{localStorage.setItem(learningKey+':previous',compactArchive(old))}catch{}
+  return true;
+}
 function learningName(){return childName()}
 function learningProfile(){if(pl&&pl.guest){if(!learningGuest)learningGuest={level:0,events:[]};return learningGuest}return ETM_CORE.profile(learningState,learningName())}
 function learningSpeak(text){if(window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined'){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.rate=.86;window.speechSynthesis.speak(u)}else notice('Read-aloud is not available on this device.')}
@@ -259,7 +266,18 @@ function learningFamilySettings(){
    };
  }btn('Camera & sound',openTogether,a,'quietButton');btn('Lock Dad’s tools',function(){lockParent();entryScreen(true)},a,'quietButton');
 }
-function learningBackups(){if(!dadUnlocked())return;var a=learningPage('Backup & restore','parent',parentRoom);node('p','Export one family backup before changing devices. New practice history is local to this browser; it is not automatically synchronised.',a,'lIntro');btn('Download family backup',exportFamilyBackup,a,'primaryButton');btn('Restore family backup',importFamilyBackup,a,'quietButton');}
+function learningBackups(){if(!dadUnlocked())return;var a=learningPage('Backup & restore','parent',parentRoom);node('p','Download a copy of the family data on this device. If a save has failed, keep this page open while you back up.',a,'lIntro');btn('Download family backup',exportFamilyBackup,a,'primaryButton');btn('Restore family backup',importFamilyBackup,a,'quietButton');
+  node('h3','Space on this device',a);
+  const sizes=new Map();
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);if(!key?.startsWith('etm'))continue;
+    const category=storageLabel(key);sizes.set(category,(sizes.get(category)||0)+(localStorage.getItem(key)?.length||0));
+  }
+  const largest=Array.from(sizes).sort((a,b)=>b[1]-a[1])[0];
+  if(largest)node('p','Largest group in ETM’s browser storage: '+largest[0]+'.',a);
+  if(lastFailedRecord)node('p','A recent save failed for '+lastFailedRecord+'.',a);
+  const feedback=node('p','Make recovery copies smaller while keeping their contents.',a);feedback.setAttribute('role','status');
+  btn('Make room safely',()=>{const n=storageMakeRoom();feedback.textContent=n?'Recovery copies made smaller. Try the save again.':'Recovery copies are already as small as ETM can make them. Keep your backup if saves still fail.'},a,'quietButton');}
 function learningMusic(){
  if(window.ETMPiano)window.ETMPiano.prepare();stopCoach();musicPractice=null;var a=learningPage('Music','music'),layout=node('div',undefined,a,'studyMusicLayout'),main=node('div',undefined,layout),grid=node('div',undefined,main,'lSubjectGrid');studySidebar(layout);node('p','A little listening, reading and playing. Your RIAM settings stay the same.',a,'lIntro');learningCard(grid,'🎼','Notes & theory','Recognise notes and musical signs',learningMusicKnowledge,'blue');learningCard(grid,'🥁','Listening & rhythm','Copy a rhythm and hear what changes',musicListeningRoom,'peach');learningCard(grid,'🎹','Scales','Your RIAM exercises',scaleRoom,'mint');learningCard(grid,'📖','My pieces','Add a score, review it and play',sheetRoom,'lilac');var settings=profileSettings(learningName());btn('RIAM '+gradeLabel(settings.musicGrade)+' · '+settings.musicYear,function(){musicLevelPicker(learningName(),learningMusic)},a,'quietButton');btn('Race together',learningPlayTogether,a,'quietButton');var sound=node('details',undefined,a,'lDisclosure');node('summary','Piano sound',sound);node('p','Sampled Salamander Grand Piano V3 by Alexander Holm · CC BY 3.0. Samples load from ETM; a simple tone is used if they are unavailable.',sound,'lSmall');var credit=node('a','Sample source and licence',sound);credit.href='assets/piano/README.txt';credit.target='_blank';credit.rel='noopener noreferrer';
 }
@@ -279,7 +297,7 @@ ttTrail=function(table){if(Number.isInteger(table))learningTableDetails(table);e
 createRoom=function(){launch('story')};musicRacesRoom=learningPlayTogether;
 var learningOldDownload=downloadData;downloadData=function(filename,data){if(dadUnlocked()&&data&&/^ETM-/.test(data.format||''))data=Object.assign({},data,{learningV2:learningState});return learningOldDownload(filename,data)};
 window.ETMLearningOpenSavedQuizzes=learningSavedQuizzes;
-window.ETMLearningBackup={restore:function(data){if(!dadUnlocked())throw Error('Unlock Dad’s tools to restore learning progress.');learningState=ETM_CORE.merge(learningState,data);learningStore()}};
+window.ETMLearningBackup={restore:function(data){if(!dadUnlocked())throw Error('Unlock Dad’s tools to restore learning progress.');learningState=ETM_CORE.merge(learningState,data);if(!learningStore())throw Error('There is not enough space for the restored practice history.')}};
 // The existing reviewed AI draft can use the same uncluttered match screen.
 labQuizMatch=function(m){var draft={players:m.draft.players.map(function(p){return {slot:p.slot,topic:p.topic,level:p.level,questions:p.questions.map(function(q){return {label:q.question,options:q.options,correct:q.correct,explanation:q.explanation}})}})};learningMatch({draft:draft,round:m.round,turn:m.turn,scores:m.scores,answered:!!m.answered})};
 

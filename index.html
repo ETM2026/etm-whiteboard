@@ -485,9 +485,8 @@ body[data-room=tables] #clubhouse{background:#f5f8fc}body[data-room=tables] .clu
   function saveBoard(){
     if(!code)return;
     var info=pages.map(function(q){return {bg:q.bg,img:q.img,v:q.v||0}}),k="etmBoard:"+code;
-    try{localStorage.setItem(k,JSON.stringify({s:strokes,p:info,pg:pg,deleted:deleted,cleared:cleared,clock:clock,tasks:tasks,follow:follow}))}
-    catch(e){document.getElementById("saved").textContent="Save failed — export a backup";return}
-    document.getElementById("saved").textContent="Saved on this device";
+    if(!storagePut(k,JSON.stringify({s:strokes,p:info,pg:pg,deleted:deleted,cleared:cleared,clock:clock,tasks:tasks,follow:follow}))){document.getElementById("saved").textContent="Unsaved · keep this page open";return false}
+    document.getElementById("saved").textContent="Saved on this device";return true;
   }
   function loadBoard(){
     try{var d=JSON.parse(localStorage.getItem("etmBoard:"+code)||"null");
@@ -1030,7 +1029,7 @@ body[data-room=tables] #clubhouse{background:#f5f8fc}body[data-room=tables] .clu
   var activity=null,readingRecognition=null,readingAccepted=null,activityTimers=[],recorder=null,recordStream=null,recordTimer=null;
   var learned={words:['cat','dog','sun','bed','pig','hat','cup','bus','red','hen'],challenges:[],stories:[],wins:{},messages:[]};
   try{Object.assign(learned,JSON.parse(localStorage.getItem('etmLearning')||'{}'))}catch(e){}
-  function keepLearning(){try{localStorage.setItem('etmLearning',JSON.stringify(learned))}catch(e){feedback('Your device is full. Download your recordings or export a session.')}}
+  function keepLearning(){return storagePut('etmLearning',JSON.stringify(learned))}
   function node(tag,text,parent,cls){var e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;if(parent)parent.appendChild(e);return e}
   function btn(text,fn,parent,cls){var b=node('button',text,parent,cls||'kidButton');b.onclick=fn;return b}
   function say(text){if(!window.speechSynthesis){feedback(text);return}window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='en-GB';u.rate=.82;window.speechSynthesis.speak(u)}
@@ -1208,7 +1207,7 @@ next()}
   var oldLaunch=launch;launch=function(kind,data,remote){var group={read:'read',build:'read',detective:'read',rhythm:'music',story:'create',challenge:'create',memory:'play',draw:'play',treasure:'play',messages:'messages',count:'maths'}[kind]||roomKey;var returns={read:readRoom,music:musicRoom,create:createRoom,play:playRoom,messages:home,maths:mathsRoom};setRoom(group,group==='messages'?'From Dad':group[0].toUpperCase()+group.slice(1),returns[group]);oldLaunch(kind,data,remote);};
   // Whiteboard: one small tool row, with focused drawing and paper panels.
   $('pen').textContent='✏️ Pen';$('eraser').textContent='▱ Rubber';$('undo').textContent='↶ Undo';
-  var drawLeft=node('div',undefined,bar,'drawEssentials');['pen','eraser','undo'].forEach(function(id){drawLeft.appendChild($(id))});bar.appendChild($('colors'));var drawRight=node('div',undefined,bar,'drawExtras');btn('+ Tools',drawingTools,drawRight);btn('▤ Paper',paperTools,drawRight);btn('Share drawing',()=>shareDrawing(drawingSnapshot()),drawRight);bar.setAttribute('aria-label','Drawing tools');
+  var drawLeft=node('div',undefined,bar,'drawEssentials');['pen','eraser','undo'].forEach(function(id){drawLeft.appendChild($(id))});bar.appendChild($('colors'));var drawRight=node('div',undefined,bar,'drawExtras');btn('+ Tools',drawingTools,drawRight);btn('▤ Paper',paperTools,drawRight);btn('Draw together',()=>window.ETMDraw?.choose(),drawRight,'primaryButton');btn('Send a picture',()=>shareDrawing(drawingSnapshot()),drawRight);bar.setAttribute('aria-label','Drawing tools');
   var pageBar=node('div',undefined,document.body);pageBar.id='pageBar';['prev','pgl','next','addp'].forEach(function(id){pageBar.appendChild($(id))});pageBar.appendChild($('saved'));
   var mathReturn=btn('← Back to our maths question',function(){renderMaths()},pageBar,'mathReturn');mathReturn.id='mathReturn';mathReturn.hidden=true;
   function drawingTools(){var a=openDrawer('Drawing tools');node('p','Choose what you want to make.',a);var grid=node('div',undefined,a,'drawerGrid');[['line','╱ Line'],['text','Aa Text'],['stamp','🌟 Sticker'],['ptr','☝ Point']].forEach(function(x){var e=park(x[0],grid);e.textContent=x[1];var original=e.onclick;if(!e._drawerClick){e._drawerClick=true;e.onclick=function(){original.call(e);cleanupDrawer()}}});node('h3','Pen size',a);park('sizes',a);btn('↷ Redo',function(){$('redo').click();cleanupDrawer()},a,'quietButton')}
@@ -1529,8 +1528,44 @@ var ETM_PDF_WORKER="LyoqCiAqIEBsaWNzdGFydCBUaGUgZm9sbG93aW5nIGlzIHRoZSBlbnRpcmUg
   var progressEvents=readJSON('etmProgressV7',[]), eventIds=new Set(progressEvents.map(function(e){return e.id}));
   var vault=null, vaultKey=null, vaultSalt=null, vaultSaveQueue=Promise.resolve(), parentActiveAt=0, chartOpen=false, privateOverlay=null, memberKeys=null;
   var race=null, racePending=null, raceTicker=null, mathsBoardView=false, coach=null, coachRAF=null, activityWinId=gid();
-  function readJSON(k,f){try{return JSON.parse(localStorage.getItem(k))||f}catch(e){return f}}
-  function writeJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){notice('Storage is full. Download a backup in Parent tools.');return false}}
+  function storageArchiveKey(k){return /^etmRecovered(?:Board|Private):/.test(k)||/^etmLearningV2:.*:previous$/.test(k)}
+  function unpackRecord(raw){
+    if(!raw||!raw.startsWith('ETM-Z1:'))return raw;
+    return window.fflate.strFromU8(window.fflate.unzlibSync(Uint8Array.from(atob(raw.slice(7)),c=>c.charCodeAt(0))));
+  }
+  function compactArchive(raw){
+    if(!raw||raw.length<1024||raw.startsWith('ETM-Z1:')||!window.fflate)return raw;
+    const lib=window.fflate,z=lib.zlibSync(lib.strToU8(raw),{level:3});
+    let binary='';for(let n=0;n<z.length;n+=8192)binary+=String.fromCharCode(...z.subarray(n,n+8192));
+    const packed='ETM-Z1:'+btoa(binary);
+    return packed.length<raw.length*.9&&unpackRecord(packed)===raw?packed:raw;
+  }
+  function storageMakeRoom(){
+    let saved=0;
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);if(!key||!storageArchiveKey(key))continue;
+      if(key.startsWith('etmLearningV2:')&&key!=='etmLearningV2:'+accessRoom+':previous')continue;
+      if(key.startsWith('etmRecoveredPrivate:')&&!key.startsWith('etmRecoveredPrivate:'+accessRoom+':'))continue;
+      if(key.startsWith('etmRecoveredBoard:')&&!/^etmRecoveredBoard:\d+$/.test(key)&&!key.startsWith('etmRecoveredBoard:'+accessRoom+':'))continue;
+      try{const old=localStorage.getItem(key),packed=compactArchive(old);
+        if(packed!==old&&localStorage.getItem(key)===old){localStorage.setItem(key,packed);saved+=old.length-packed.length}
+      }catch{/* Keep the original when this browser cannot compact it. */}
+    }return saved;
+  }
+  function storageQuota(e){return e?.name==='QuotaExceededError'||e?.name==='NS_ERROR_DOM_QUOTA_REACHED'||e?.code===22}
+  var lastStorageNotice=0,lastFailedRecord='';
+  function storageLabel(k){if(k==='etmPiecesV7')return 'Music library';if(k.startsWith('etmBoard:'))return 'Drawing board';if(storageArchiveKey(k))return 'Recovery copies';if(k.startsWith('etmLearning'))return 'Practice and creations';if(k.startsWith('etmSyncV1:'))return 'Sync history';return 'Other ETM data'}
+  function storagePut(key,raw){
+    try{if(storageArchiveKey(key))raw=compactArchive(raw);localStorage.setItem(key,raw);return true}
+    catch(e){if(storageQuota(e)&&storageMakeRoom()){try{localStorage.setItem(key,raw);return true}catch(retry){e=retry}}
+      lastFailedRecord=storageLabel(key);
+      if(!lastStorageNotice||Date.now()-lastStorageNotice>15000){
+        lastStorageNotice=Date.now();notice(storageQuota(e)?'This device is out of save space. Dad can download a family backup in Backup & restore.':'This browser could not save the change. Keep ETM open and download a family backup.');
+      }return false;
+    }
+  }
+  function readJSON(k,f){try{return JSON.parse(unpackRecord(localStorage.getItem(k)))||f}catch(e){return f}}
+  function writeJSON(k,v){return storagePut(k,JSON.stringify(v))}
   function copyObject(x){return JSON.parse(JSON.stringify(x))}
   function todayKey(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
   function validProfile(n){return n==='Dad'||FAMILY.includes(n)}
@@ -2767,7 +2802,7 @@ var ETM_PDF_WORKER="LyoqCiAqIEBsaWNzdGFydCBUaGUgZm9sbG93aW5nIGlzIHRoZSBlbnRpcmUg
 
 
   // Optional maths AI module; failure never blocks the existing family app.
-  (function(){var version='20261115-game-night-19.1',config=document.createElement('script');config.src='maths-ai-config.js?v='+version;config.onload=load;config.onerror=load;document.head.appendChild(config);async function load(){try{for(var cssFile of ['maths-coach.css','learning.css']){var cssResponse=await fetch(cssFile+'?v='+version,{cache:'no-cache'});if(!cssResponse.ok)throw Error('Learning styles unavailable');var style=document.createElement('style');style.dataset.etmAsset=cssFile;style.textContent=await cssResponse.text();document.head.appendChild(style);}for(var jsFile of ['maths-coach.js','ai-lab.js','learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','piano-audio.js','family-games.js','atlas.js','learning.js','number-tables.js','piano-study.js','maths-discovery.js','family-sync-core.js','family-sync.js','screen-share.js','connection-health.js','family-reconnect.js','question-controls.js','family-home.js','private-family.js','friend-games.js','friend-room.js','game-invites.js']){var response=await fetch(jsFile+'?v='+version,{cache:'no-cache'});if(!response.ok)throw Error('Learning module unavailable: '+jsFile);var source=await response.text();eval(source);}if(pl&&document.body.dataset.room==='home')home();}catch(error){console.warn('ETM learning update did not finish loading. Refresh once publishing completes.');notice('The new learning update is still loading. Refresh after publishing finishes.');}}})();
+  (function(){var version='20261116-draw-together-20',config=document.createElement('script');config.src='maths-ai-config.js?v='+version;config.onload=load;config.onerror=load;document.head.appendChild(config);async function load(){try{for(var cssFile of ['maths-coach.css','learning.css']){var cssResponse=await fetch(cssFile+'?v='+version,{cache:'no-cache'});if(!cssResponse.ok)throw Error('Learning styles unavailable');var style=document.createElement('style');style.dataset.etmAsset=cssFile;style.textContent=await cssResponse.text();document.head.appendChild(style);}for(var jsFile of ['maths-coach.js','ai-lab.js','learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','piano-audio.js','family-games.js','atlas.js','learning.js','number-tables.js','piano-study.js','maths-discovery.js','family-sync-core.js','family-sync.js','screen-share.js','connection-health.js','family-reconnect.js','question-controls.js','family-home.js','private-family.js','friend-games.js','friend-room.js','game-invites.js','draw-together.js']){var response=await fetch(jsFile+'?v='+version,{cache:'no-cache'});if(!response.ok)throw Error('Learning module unavailable: '+jsFile);var source=await response.text();eval(source);}if(pl&&document.body.dataset.room==='home')home();}catch(error){console.warn('ETM learning update did not finish loading. Refresh once publishing completes.');notice('The new learning update is still loading. Refresh after publishing finishes.');}}})();
   // Entry always uses profile cards. The saved family link supplies the room.
   $('wp').style.display='none';$('gate').style.display='none';entryScreen(false);
 

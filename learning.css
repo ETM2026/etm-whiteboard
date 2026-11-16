@@ -70,3 +70,16 @@ button.wishShortcut{display:flex;align-items:center;gap:12px;width:100%;margin:1
 .friendDisc[data-mark=X],#gbd.c4 [data-coin=red]{background:#ec705d;color:#692b24!important;box-shadow:inset 0 -4px #be4839,inset 0 0 0 3px #ffa998}
 .friendDisc[data-mark=O],#gbd.c4 [data-coin=gold]{background:#f6ca57;color:#714c0b!important;box-shadow:inset 0 -4px #c98b24,inset 0 0 0 3px #ffda82}
 .friendFour .friendDisc.winCoin,#gbd.c4 .winCoin{outline:3px solid white;outline-offset:-5px;color:#1e3443!important;font-size:clamp(18px,4vw,34px)}.winExplanation{font-weight:750;color:#214e60;text-align:center}
+
+#etmHeader .inviteBadge{background:#ffe29c;color:#49320b;border:2px solid #ad7320;border-radius:15px;font-weight:750;min-height:42px}
+#etmHeader .inviteBadge[hidden],.etmDrawRoom button[hidden]{display:none!important}
+.etmDrawRoom{box-sizing:border-box;width:min(96vw,1000px);max-height:94dvh;margin:auto;padding:clamp(10px,2vw,22px);border:1px solid #a8c8bf;border-radius:22px;color:#24394d;background:#f5faf7;overflow:auto}
+.etmDrawRoom::backdrop{background:#162c3dcc}
+.drawRoomHeading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.drawRoomHeading h2,.drawRoomHeading p{margin:0 0 8px}.drawRoomHeading p{font-size:1rem}
+.duetCanvas{background:white;display:block;box-sizing:content-box;width:min(100%,calc(63dvh * 1.6));height:auto;margin:0 auto;box-shadow:0 0 0 1px #a8c8bf;border-radius:6px;touch-action:none;cursor:crosshair}
+.duetTools,.duetColours{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.duetTools{margin-top:12px}.duetTools button{min-height:44px}
+.duetColours button{min-width:44px;background:var(--ink);border:5px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #c5d1ce}
+.duetColours button[aria-pressed=true]{box-shadow:0 0 0 3px #283f50}
+@media(max-width:600px){#etmHeader:has(.inviteBadge:not([hidden])) .headerLocation,#etmHeader:has(.inviteBadge:not([hidden])) .coinBadge{display:none}.duetTools{gap:8px}.etmDrawRoom{width:96vw}}
