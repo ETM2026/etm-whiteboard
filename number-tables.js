@@ -29,10 +29,72 @@ window.ETMTables = (function () {
     for(let i=0;i<count;i++)node('i','',strip,i>=(q.op==='sub'?q.answer:q.start)?(q.op==='sub'?'taken':'added'):'');
     if(!count)node('span','0 counters',strip);
   }
+  function bookRow(op,step,n){
+    const start=op==='sub'?step+n:step,other=op==='sub'?step:n;
+    return {label:start+' '+signs[op]+' '+other,answer:op==='times'?step*n:op==='add'?step+n:n};
+  }
+  function bookTitle(op,n){return op==='times'?n+' times table':op==='sub'?'Subtract '+n:'Add '+n}
+  function clockText(t){const ds=Math.floor(t/100);return Math.floor(ds/600)+':'+String(Math.floor(ds/10)%60).padStart(2,'0')+'.'+ds%10}
+  function bestDate(r){return new Date(r.at).toLocaleDateString('en-IE',{day:'numeric',month:'short',year:'numeric'})}
+  function beatPage(step){
+    const actor=ttActor();if(!actor)return;
+    const a=learningPage(step+' times table','tables',ttHome),panel=node('section',undefined,a,'beatTable');
+    const best=()=>learningProfile().pageBests?.[step];
+    const mine=best();
+    node('span','⏱  BEAT MY TIME',panel,'lEyebrow');
+    node('h2',mine?'Your time to beat: '+clockText(mine.ms):'Set your first time',panel);if(mine)node('small','Set on '+bestDate(mine),panel);
+    node('p','Fill in the page from × 1 to × 12. You can fix any answer. The clock starts when you tap Start.',panel);
+    if(pl.guest)node('p','Guest play: enjoy the race. Times are only saved in a family profile.',panel,'lSmall');
+    btn('Start the clock',start,panel,'primaryButton');
+    function start(){
+      if(!a.isConnected||ttActor()!==actor)return;
+      panel.replaceChildren();let finished=false;
+      const bar=node('div',undefined,panel,'beatBar'),elapsed=node('strong','0:00.0',bar),count=node('span','0 of 12',bar),fields=[];
+      const trail=node('div',undefined,panel,'beatTrail');trail.setAttribute('aria-hidden','true');const markers=Array.from({length:12},()=>node('i','',trail));
+      elapsed.setAttribute('aria-label','Elapsed time');elapsed.setAttribute('role','timer');
+      const page=node('div',undefined,panel,'beatRows'),message=node('p','',panel);message.setAttribute('role','status');
+      const now=()=>performance.now(),t0=now();
+      for(let n=1;n<=12;n++){
+        const f=bookRow('times',step,n),row=node('label',undefined,page,'sheetLine');
+        node('span',f.label+' =',row);const field=node('input',undefined,row);field.type='text';field.inputMode='numeric';field.maxLength=3;field.autocomplete='off';field.enterKeyHint=n===12?'done':'next';field.setAttribute('aria-label',f.label);
+        fields.push(field);
+        field.oninput=()=>{field.removeAttribute('aria-invalid');markers[n-1].classList.toggle('filled',!!field.value.trim());message.textContent='';count.textContent=fields.filter(x=>x.value.trim()).length+' of 12';if(fields.length===12&&fields.every((x,i)=>x.value.trim()===String(step*(i+1))))finish()};
+        field.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();n<12?fields[n].focus():finish()}};
+      }
+      btn('Check my page',finish,panel,'primaryButton');fields[0].focus();
+      function tick(){if(finished||!a.isConnected||actor!==accessSession)return;elapsed.textContent=clockText(now()-t0);setTimeout(tick,120)}tick();
+      function finish(){
+        if(finished||!a.isConnected||actor!==accessSession)return;
+        const incorrect=fields.findIndex((x,i)=>!/^\d{1,3}$/.test(x.value.trim())||Number(x.value)!==step*(i+1));
+        if(incorrect>=0){const f=fields[incorrect];message.textContent=(f.value?'Have another look at ':'Fill in ')+step+' × '+(incorrect+1)+'. Your clock is still running.';f.setAttribute('aria-invalid','true');f.focus();return}
+        finished=true;const ms=Math.max(1,Math.round(now()-t0)),previous=best(),record=!previous||ms<previous.ms;
+        let saved=false;
+        if(record&&!pl.guest){const p=learningProfile();p.pageBests={...p.pageBests,[step]:{ms,at:Date.now()}};saved=learningStore();if(saved===false){if(previous)p.pageBests[step]=previous;else delete p.pageBests[step]}}
+        panel.replaceChildren();node('span','✓  12 OF 12',panel,'lEyebrow');
+        node('h2',saved?(previous?'New personal best!':'Your first personal best!'):'Page complete!',panel);
+        node('strong',clockText(ms),panel,'beatTime');
+        node('p',pl.guest?'All twelve correct. Well played!':record&&!saved?'You finished, but this device could not save the time.':previous?(record?'Your previous best was ':'Your personal best is ')+clockText(previous.ms)+'.':'Your best is saved for next time.',panel);
+        btn('Race this page again',()=>beatPage(step),panel,'primaryButton');btn('Back to tables',ttHome,panel,'quietButton');
+      }
+    }
+  }
+  function tableBook(parent,op){
+    const book=node('section',undefined,parent,'tableBook');node('h2',labels[op]+' tables 1 to 12',book);
+    const grid=node('div',undefined,book,'tableBookGrid');
+    for(let step=1;step<=12;step++){
+      const sheet=node('article',undefined,grid,'tableBookCard');sheet.dataset.tint=String((step-1)%6);
+      node('h3',bookTitle(op,step),sheet);
+      for(let n=1;n<=12;n++){const fact=bookRow(op,step,n),row=node('div',undefined,sheet,'tableBookRow');
+        node('span',fact.label,row);node('span','=',row);node('strong',String(fact.answer),row)}
+      if(op==='times'){const record=learningProfile().pageBests?.[step],action=btn('⏱ Beat my time',()=>beatPage(step),sheet,'lPill');action.setAttribute('aria-label','Beat my time: '+bookTitle(op,step));if(record)node('small','My best: '+clockText(record.ms),sheet)}
+    }
+    return book;
+  }
   function homeTable(op, chosen) {
     if (!ttActor()) return;
     const title=labels[op]+' tables',a=learningPage(title,'tables',learningMath);
     tabs(a,op);
+    tableBook(a,op);
     const settings=profileSettings(learningName());
     const saved=chosen ?? settings['step_'+op];
     const step=Number.isInteger(saved)&&saved>=0&&saved<=12?saved:(learningName()==='Matthew'?1:2);
@@ -50,9 +112,6 @@ window.ETMTables = (function () {
     const back=btn('← Previous fact',()=>change(-1),nav,'quietButton');
     const next=btn('Next fact →',()=>change(1),nav,'quietButton');
     function change(delta){position+=delta;show();back.disabled=position===0;next.disabled=position===12}
-    const all=node('details',undefined,card,'lDisclosure');node('summary','See my whole table',all);
-    const list=node('div',undefined,all,'factGrid');
-    for(let i=0;i<=12;i++){const q=fact(op,step,i);btn(q.label+' = '+q.answer,()=>{position=i;change(0);all.open=false;top.scrollIntoView({block:'nearest'})},list,'lPill')}
     const history=tableHistory(op),tried=Array.from({length:13},(_,i)=>history.get(fact(op,step,i).label)).filter(Boolean);
     if(tried.length)node('p',tried.length+' of 13 facts explored in this table.',a,'lSmall');
     const actions=node('div',undefined,a,'numberNav');
@@ -139,5 +198,5 @@ window.ETMTables = (function () {
       }pass();
     },a,'primaryButton');
   }
-  return {drawCounters:dots,tabs,fact,options,queue,home:homeTable,labels,signs};
+  return {bookRow,tableBook,drawCounters:dots,tabs,fact,options,queue,home:homeTable,labels,signs};
 })();

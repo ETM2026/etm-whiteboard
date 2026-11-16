@@ -29,13 +29,16 @@ window.ETMDraw=(()=>{
     let wire,invitation,closing=false,peerFinished=false,ended=false,done=false;
     let ready=hostSide,bg=base,colour=colours[hostSide?1:2],clock=0,pen=null;
     let contact=Date.now(),pingAt=0,previewAt=0,parts=[],decodeId=0;
-    const marks=[new Map(),new Map()],history=[],queue=[];
+    let exitDialog=null,revision=0,exported=-1;
+    const opener=document.activeElement,marks=[new Map(),new Map()],history=[],queue=[];
     const d=node('dialog',undefined,document.body,'etmDrawRoom');
     d.setAttribute('aria-label','Draw together with '+name);
     const top=node('div',undefined,d,'drawRoomHeading');
     node('h2','Draw together',top);
     const status=node('p',hostSide?'Inviting '+name+'…':'Opening the picture…',top);status.setAttribute('role','status');
-    const page=node('canvas',undefined,d,'duetCanvas');page.width=W;page.height=H;page.setAttribute('aria-label','Shared drawing paper');
+    const cross=btn('×',requestClose,top,'duetClose');cross.setAttribute('aria-label','Close Draw Together');
+    const paperArea=node('div',undefined,d,'duetPaperArea');
+    const page=node('canvas',undefined,paperArea,'duetCanvas');page.width=W;page.height=H;page.setAttribute('aria-label','Shared drawing paper');
     const tools=node('div',undefined,d,'duetTools');
     const swatches=node('div',undefined,tools,'duetColours');
     for(const [i,c] of colours.entries()){
@@ -44,19 +47,45 @@ window.ETMDraw=(()=>{
     }
     const undo=btn('Undo my stroke',()=>{
       if(closing||ended||!history.length)return;
-      finishPen();const id=history.pop();marks[local].delete(id);push({t:'undo',id});paint();
+      finishPen();revision++;const id=history.pop();marks[local].delete(id);push({t:'undo',id});paint();
     },tools,'quietButton');
-    const copy=btn('Keep a copy',()=>{
-      page.toBlob(blob=>{if(!blob||actor!==accessSession)return;
+    function savePicture(afterSave){
+      const at=revision;
+      page.toBlob(blob=>{
+        if(done||actor!==accessSession)return;
+        if(!blob){notice('The picture could not be saved. Try again.');return}
         const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ETM-drawing-together.png';a.click();
-        setTimeout(()=>URL.revokeObjectURL(url),60000);
+        setTimeout(()=>URL.revokeObjectURL(url),60000);exported=at;afterSave?.();
       },'image/png');
-    },tools,'quietButton');
+    }
+    const copy=btn('Keep a copy',()=>savePicture(),tools,'quietButton');
     const finish=btn('Finish',complete,tools,'primaryButton');
     const retry=btn('Invite again',requestInvite,tools,'primaryButton');retry.hidden=true;
-    const exit=btn('Leave drawing',()=>{if(!ended&&!confirm('Leave this drawing? Use Keep a copy first if you want the picture. Changes still sending may be lost.'))return;dispose()},tools,'quietButton');
-    exit.hidden=true;d.oncancel=e=>{e.preventDefault();if(!ended)complete();else dispose()};
+    function requestClose(){
+      finishPen();
+      if(!marks[0].size&&!marks[1].size||exported===revision){dispose();return}
+      if(exitDialog)return;
+      const box=exitDialog=node('dialog',undefined,d,'duetExit');
+      box.setAttribute('aria-label','Close this drawing?');
+      node('h2','Close this drawing?',box);
+      node('p',!ended&&wire&&(!navigator.onLine||queue.length||wire.pending)?'Some marks may still be sending. You can keep the picture on this screen.':'You can keep a picture before you leave.',box);
+      const stay=()=>{box.close();box.remove();exitDialog=null;cross.focus()};
+      const back=btn('Back to drawing',stay,box,'primaryButton');
+      btn('Keep a copy and close',()=>savePicture(()=>{if(exitDialog===box)dispose()}),box,'quietButton');
+      btn('Close without saving',dispose,box,'quietButton');
+      box.oncancel=e=>{e.preventDefault();stay()};box.showModal();back.focus();
+    }
+    d.oncancel=e=>{if(e.target===d){e.preventDefault();requestClose()}};
+    // Fit the same whole sheet on both screens. Resize only its display, so
+    // rotating a tablet never clears the canvas or moves existing strokes.
+    function fitPaper(){
+      const width=Math.min(paperArea.clientWidth,paperArea.clientHeight*W/H);
+      if(width>0)page.style.width=width+'px';
+    }
+    const nativeFit=window.CSS?.supports('width','1cqw');
+    const observer=!nativeFit&&window.ResizeObserver?new window.ResizeObserver(fitPaper):null;
     d.showModal();finish.focus();
+    if(!nativeFit){fitPaper();if(observer)observer.observe(paperArea);else window.addEventListener('resize',fitPaper)}
     function paint(){
       const ctx=page.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,W,H);if(bg)ctx.drawImage(bg,0,0,W,H);
       const ordered=[...marks[0].values(),...marks[1].values()].sort((a,b)=>a.id-b.id||a.side-b.side);
@@ -82,13 +111,13 @@ window.ETMDraw=(()=>{
     function finishPen(){if(!pen)return;delta();pen=null}
     page.onpointerdown=e=>{
       if(!ready||closing||ended||pen||e.button!==0)return;e.preventDefault();
-      const m={id:++clock,side:local,c:colour,p:position(e)};marks[local].set(m.id,m);history.push(m.id);
+      const m={id:++clock,side:local,c:colour,p:position(e)};revision++;marks[local].set(m.id,m);history.push(m.id);
       pen={pointer:e.pointerId,mark:m,offset:0};page.setPointerCapture(e.pointerId);delta();paint();
     };
     page.onpointermove=e=>{
       if(!pen||pen.pointer!==e.pointerId)return;const xy=position(e),p=pen.mark.p;
       if(p.at(-2)===xy[0]&&p.at(-1)===xy[1])return;
-      p.push(...xy);if(Date.now()-previewAt>=140||p.length-pen.offset>=256)delta();paint();
+      p.push(...xy);revision++;if(Date.now()-previewAt>=140||p.length-pen.offset>=256)delta();paint();
     };
     page.onpointerup=page.onpointercancel=page.onlostpointercapture=e=>{if(pen?.pointer===e.pointerId)finishPen()};
     function receive(m){
@@ -101,8 +130,8 @@ window.ETMDraw=(()=>{
       }
       if(m.t==='ink'&&Number.isSafeInteger(m.id)&&m.id>0&&colours.includes(m.c)&&Array.isArray(m.p)&&m.p.length>=2&&m.p.length<=512&&m.p.length%2===0&&m.p.every((n,i)=>Number.isInteger(n)&&n>=0&&n<=(i%2?H:W))){
         let s=marks[remote].get(m.id);if(!s){s={id:m.id,side:remote,c:m.c,p:[]};marks[remote].set(m.id,s);clock=Math.max(clock,m.id)}
-        s.p.push(...m.p);paint();
-      }else if(m.t==='undo'){marks[remote].delete(m.id);paint()}
+        s.p.push(...m.p);revision++;paint();
+      }else if(m.t==='undo'){if(marks[remote].delete(m.id))revision++;paint()}
       else if(m.t==='finish'){peerFinished=true;if(!closing)complete();label()}
     }
     function bind(w){
@@ -117,19 +146,21 @@ window.ETMDraw=(()=>{
       flush();label();
     }
     function label(){
-      if(ended){status.textContent=peerFinished?'Drawing finished. Keep a copy of your picture.':'The other device left. You can still keep this picture.';exit.hidden=false;finish.hidden=true;return}
-      if(closing){status.textContent='Finishing · waiting for both pictures to match…';exit.hidden=false;return}
+      if(ended){status.textContent=peerFinished?'Drawing finished. Keep a copy of your picture.':'The other device left. You can still keep this picture.';finish.hidden=true;return}
+      if(closing){status.textContent='Finishing · waiting for both pictures to match…';return}
       if(!wire)return;
       if(Date.now()-contact>8500||navigator.onLine===false){status.textContent='Reconnecting to '+name+' · keep drawing';return}
       status.textContent=ready?'Drawing with '+name:'Opening the picture…';
     }
     function complete(){
       if(ended||closing)return;retry.hidden=true;finishPen();closing=true;paint();finish.disabled=true;
-      if(!wire){if(invitation)invites.forget(invitation);ended=true;status.textContent='Drawing finished. You can keep your picture.';finish.hidden=true;exit.hidden=false;return}
+      if(!wire){if(invitation)invites.forget(invitation);ended=true;status.textContent='Drawing finished. You can keep your picture.';finish.hidden=true;return}
       push({t:'finish'});label();
     }
     function dispose(){
-      if(done)return;done=true;++decodeId;clearInterval(timer);if(invitation)invites.forget(invitation);wire?.close();d.remove();if(active?.dialog===d)active=null;
+      if(done)return;done=true;++decodeId;clearInterval(timer);
+      if(observer)observer.disconnect();else if(!nativeFit)window.removeEventListener('resize',fitPaper);if(invitation)invites.forget(invitation);wire?.close();exitDialog?.remove();d.close();d.remove();if(active?.dialog===d)active=null;
+      if(actor===accessSession&&opener?.isConnected)opener.focus();
     }
     const timer=setInterval(()=>{
       if(actor!==accessSession||!familyActor()){dispose();return}

@@ -124,9 +124,9 @@ window.ETMGameInvites=(function(){
     try{
       const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(d.iv)},await letterKey(d.key),unb64(d.box));
       if(accessSession!==session)return;
-      const visit=new TextDecoder().decode(clear),drawing=visit==='draw-together-v1',handler=drawing?window.ETMDraw:window.ETMFriends,info=handler?.describe(visit);if(!info)return;
+      const visit=new TextDecoder().decode(clear),drawing=visit==='draw-together-v1',sheet=visit==='practice-sheet-v1',handler=sheet?window.ETMSheet:drawing?window.ETMDraw:window.ETMFriends,info=handler?.describe(visit);if(!info||sheet&&(b.role!=='dad'||b.name!=='Dad'||session.role!=='child'))return;
       const reply=kind=>{if(session===accessSession)send('etm-game-invite-19',{to:b.from,name:b.name,id:d.id,kind})};
-      prompt(key,{title:b.name+' invites you to '+info.title,text:drawing?'You can both draw on the same picture.':'Play together on your own screens.',yes:info.yes,
+      prompt(key,{title:b.name+' invites you to '+info.title,text:sheet?'Write your answers while Dad follows along.':drawing?'You can both draw on the same picture.':'Play together on your own screens.',yes:info.yes,
         options:info.options,shown:()=>reply('seen'),accept:()=>{reply('joining');handler.joinVisit(visit,{id:b.from,name:b.name,key:d.key},d.id)},decline:()=>reply('later')});
     }catch{/* A different family device cannot open this invitation. */}
   }

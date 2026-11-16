@@ -201,7 +201,7 @@ function regionalMap(kind,parent,quiz){
 }
 
 // Keep the water visible through every experiment, including after a stage change.
-function waterExperiment(box){
+function waterExperiment(box,level){
  const stages=[
    ['Warm the water','Evaporation','The Sun warms the water. Some liquid turns into water vapour and rises.'],
    ['Cool the vapour','Condensation','High in the cooler air, water vapour forms tiny droplets that make a cloud.'],
@@ -214,7 +214,7 @@ function waterExperiment(box){
  const buttons=[],layers=diagram.querySelectorAll('.experimentStage');
  stages.forEach(([label,title,detail],i)=>{const b=btn(label,()=>{
    layers.forEach((g,j)=>g.setAttribute('class','experimentStage'+(i===j?' active':'')));
-   buttons.forEach((el,j)=>el.setAttribute('aria-pressed',String(i===j)));out.textContent=title+' · '+detail;
+   buttons.forEach((el,j)=>el.setAttribute('aria-pressed',String(i===j)));out.textContent=level===0?['Some water goes into the air.','Tiny drops make a cloud.','Look! Rain falls from the cloud.'][i]:title+' · '+detail;
  },tabs,'lPill');b.setAttribute('aria-pressed','false');buttons.push(b)});
 }
 

@@ -63,9 +63,9 @@ var ETM_DATA=(function(){
  ['Why plan a route before a journey?','To understand the path and crossings',['To make all places nearby','To stop Earth spinning','To change the oceans'],'A route helps you understand where and how you will travel.',2]
  ]);
  unit('daynight','science','Turn day into night','☀️','daynight',[
- 'Earth spins. A place facing the Sun has daylight. Turn our model and watch the little marker.',
- 'The Sun lights the side facing it. As Earth rotates, a place can move into the dark side. A full rotation takes about a day.',
- 'Day and night come from rotation. Seasons come from Earth’s tilted axis as it orbits the Sun, not from the Sun going around Earth.'
+ "The dot is our home. When our side turns away from the Sun, it is night.",
+ "The Sun is still shining. Earth spins, taking our home into daylight and then into darkness.",
+ "Imagine two homes on the equator, halfway around Earth from each other. When one faces the Sun, the other faces away. One spin takes about a day; a trip around the Sun takes a year."
  ],[
  ['What gives Earth daylight?','The Sun',['A mountain','A cloud','A tree'],'The Sun is our main natural source of daylight.',0],
  ['When our place faces away from the Sun, is it day or night?','Night',['Always noon','Day','A rainbow'],'The side facing away receives no direct sunlight.',0],
@@ -73,14 +73,14 @@ var ETM_DATA=(function(){
  ['What causes day and night?','Earth rotating',['The Sun switching off','Clouds hiding every place','Earth stopping'],'Rotation changes which places face the Sun.',1],
  ['About how long is one full Earth rotation?','One day',['One minute','One year','One month'],'A solar day is about twenty-four hours.',1],
  ['Does the Sun stop shining every night?','No',['Yes; everywhere','Only in winter','Only over oceans'],'Your place turns away while other places receive sunlight.',1],
- ['Which motion makes a year?','Earth orbiting the Sun',['Earth spinning once','The Moon spinning once','Clouds crossing the sky'],'A year is about one trip of Earth around the Sun.',2],
- ['What mainly causes our seasons?','Earth’s tilted axis',['The Sun switching temperature daily','Earth being flat','The Moon covering the Sun'],'Earth’s tilt changes sunlight through the year.',2],
- ['Can it be daytime in one place and night elsewhere?','Yes',['Never','Only on the Moon','Only once a year'],'Different parts of Earth face toward or away from the Sun.',2]
+ ["Two dots sit opposite each other on Earth’s equator. One faces the Sun. After half a spin, which dot faces the Sun?", "The dot that was in darkness", ["Both dots at once", "The same dot as before", "Neither dot until next year"], "Half a spin swaps which of those two places faces the Sun.", 2],
+ ["A lamp is the Sun and a ball is Earth. Which test models one day?", "Keep the lamp still and spin the ball once", ["Switch the lamp off and on", "Move the ball once around the lamp without spinning it", "Move the lamp further away"], "One spin brings a marked place through daylight and darkness and back. Travelling around the Sun models a year.", 2],
+ ["Two children see sunset at different times on a clear day. Which observation best explains that?", "Their homes turn away from sunlight at different times", ["The Sun stops shining once for each home", "Both homes face straight toward the Sun at sunset", "The Moon passes in front of each home every evening"], "Earth’s rotation carries different places across the edge of daylight at different times.", 2]
  ]);
  unit('water','science','A drop’s adventure','💧','water',[
- 'Water can move between sea, air and land. Warmth helps liquid water become invisible water vapour. Explore our model.',
- 'Evaporation turns liquid into gas. Cooling can turn water vapour into tiny liquid drops: condensation. Rain is precipitation.',
- 'Water follows many paths. It can collect in rivers, soak into the ground, freeze, melt and return to the air. The model shows only a few of those paths.'
+ "Rain is water falling from clouds. On land it can make puddles.",
+ "Some water in a puddle goes into the air as an invisible gas. This is evaporation. When the gas cools into tiny drops again, that is condensation.",
+ "Liquid can evaporate without boiling. Cooling can turn invisible water vapour back into drops. To test what changes evaporation, change one thing and measure how much water is left."
  ],[
  ['Which is liquid water?','A raindrop',['A dry stone','A wooden block','A sheet of paper'],'A raindrop is liquid water.',0],
  ['What often falls from rain clouds?','Rain',['Sandwiches','Trees','Pebbles'],'Rain falls as drops of water.',0],
@@ -88,14 +88,14 @@ var ETM_DATA=(function(){
  ['What is evaporation?','Liquid water becoming water vapour',['Water turning to stone','Clouds becoming soil','Ice turning to metal'],'Evaporation changes liquid water into gas.',1],
  ['What is condensation?','Water vapour becoming liquid drops',['Rain becoming rocks','Soil becoming air','Water becoming sunlight'],'Cooling water vapour can form liquid droplets.',1],
  ['What supplies much of the energy driving the water cycle?','The Sun',['The Moon’s colour','A map key','A compass needle'],'Solar energy helps water evaporate.',1],
- ['Is water vapour itself visible?','No; it is a gas',['Yes; it is every white cloud','Yes; it is ice','Only if it is salty'],'The white part of a cloud is tiny droplets or ice, not water vapour itself.',2],
- ['Where can rain go after reaching land?','Into rivers and the ground',['Only back to a cloud immediately','Only into bottles','Nowhere'],'Runoff and infiltration are two possible paths.',2],
- ['Is the water cycle only one fixed circular route?','No; water follows many paths',['Yes; every drop takes identical steps','Only in summer','Only on islands'],'Water can move and change state along different connected paths.',2]
+ ["Drops appear outside a sealed cold bottle. Where did that water come from?", "Water vapour in the surrounding air", ["Water leaking through the sealed bottle", "The plastic changing into water", "Ice passing through the bottle wall"], "The cold surface cools nearby air, so some of its water vapour condenses into drops.", 2],
+ ["Two dishes start with 50 mL of water. After a day one has 42 mL and one has 47 mL. Neither leaked. Which lost more by evaporation?", "The dish with 42 mL left", ["The dish with 47 mL left", "Both lost 5 mL", "Neither, because the water did not boil"], "The first lost 8 mL and the second lost 3 mL. Water does not have to boil to evaporate.", 2],
+ ["How could you test whether moving air helps a wet cloth dry?", "Compare matching wet cloths with and without a fan at the same temperature", ["Compare a warm towel with a cold sock", "Add more water only to the cloth near the fan", "Start the fan cloth an hour earlier"], "Keep cloth, starting water, temperature and drying time alike. Then the airflow is the main difference.", 2]
  ]);
  unit('forces','science','Push, pull, roll','⚽','ramp',[
- 'A push or pull is a force. Try a gentle and a steeper ramp. Predict what the ball will do before you roll it.',
- 'Gravity pulls objects toward Earth. On this model, a steeper ramp lets the ball gain speed more quickly. The ball and surface stay the same.',
- 'A fair comparison changes one thing at a time. Surface roughness and friction can also affect motion, so they must be controlled.'
+ "The ball goes down the ramp. Earth pulls it down. That pull is called gravity.",
+ "Gravity pulls the ball down. On the steeper ramp, more of that pull is along the slope, so the ball picks up speed more quickly.",
+ "To test the slope, change only the slope. If you also push the ball, you cannot tell which change made it quicker. Repeating each run helps you judge whether a difference is consistent."
  ],[
  ['To move a toy away from you, you might…','Push it',['Paint it','Name it','Count it'],'A push is a force that can move an object away.',0],
  ['To bring a toy toward you, you might…','Pull it',['Hide it','Sing to it','Colour it'],'A pull can bring an object closer.',0],
@@ -103,14 +103,14 @@ var ETM_DATA=(function(){
  ['Which force pulls objects toward Earth?','Gravity',['Sunlight','A map','A musical note'],'Gravity attracts objects toward Earth.',1],
  ['In our model, what changes when the ramp gets steeper?','The ball gains speed faster',['The ball becomes alive','The ball changes colour','Gravity disappears'],'A steeper ramp increases the downhill part of gravity’s effect.',1],
  ['What can slow a sliding object on a rough surface?','Friction',['Its name','The day of the week','A rainbow'],'Friction opposes sliding motion between surfaces.',1],
- ['To test ramp steepness fairly, what should stay the same?','The ball and ramp surface',['Nothing','Only the title','Every object’s colour only'],'Keep other relevant variables the same while changing steepness.',2],
- ['Why repeat a test?','To check that a result is reliable',['To guarantee your guess is right','To remove all forces','To avoid observing'],'Repeated observations help you check a pattern.',2],
- ['Does a simple model include every real-world effect?','No',['Yes; always','Only on a tablet','Only if it is colourful'],'Models simplify reality. This one does not calculate all rolling and friction effects.',2]
+ ["On the low ramp a ball takes 4 seconds, then 4 again. On the high ramp it takes 2 seconds both times. What does this support?", "This ball finished sooner on the high ramp", ["Every ball takes 2 seconds on a ramp", "The ball weighed less on the high ramp", "Gravity switched off on the low ramp"], "The same ball finished sooner in both high-ramp runs. These results describe this test.", 2],
+ ["A car rolls faster on a steep wooden ramp than on a gentle carpeted ramp. Which test would tell you whether steepness mattered?", "Use the same surface at two slopes", ["Compare the same two ramps again", "Push harder on the gentle ramp", "Use two different cars on one slope"], "Keeping the surface and car the same lets you isolate the effect of the slope.", 2],
+ ["Three runs take 3, 3 and 7 seconds. What should you do before deciding the usual time?", "Check what happened and repeat the runs", ["Use 7 because it is the biggest", "Pick the first time and stop", "Remove 7 without investigating"], "An unusual time could be a real variation or a measuring slip. More evidence helps you decide.", 2]
  ]);
  unit('plants','science','Help a plant grow','🌱','plants',[
- 'Most green plants need water and light to grow well. Try changing their conditions in this pretend garden.',
- 'Roots take up water. Leaves use light to help make food. Different plants need different amounts, so more water is not always better.',
- 'Green plants use light, water and carbon dioxide to make sugars. Test one condition at a time and allow real plants enough time to respond.'
+ "A plant takes in water through its roots. Without enough water it can droop.",
+ "Roots take in water. Leaves use light to make food for the plant. Real plants take days to show changes.",
+ "Green leaves use light energy, water and carbon dioxide from the air to make sugar. A taller stem alone does not prove a plant is healthier: look at its leaves, too."
  ],[
  ['What can help a green plant grow?','Light',['A woolly hat','A toy car','A pencil case'],'Most green plants need light to grow well.',0],
  ['Which part is usually below the soil?','Roots',['Flowers','Leaves','Fruit'],'Roots anchor a plant and take up water.',0],
@@ -118,14 +118,14 @@ var ETM_DATA=(function(){
  ['Which part usually takes up water from the soil?','Roots',['Petals','Seeds in a packet','Fruit skin'],'Roots absorb water from the soil.',1],
  ['Should you keep adding water without checking?','No; too much can harm plants',['Yes; more is always better','Only at night','Only if the pot is blue'],'Roots also need suitable conditions and air; overwatering can cause problems.',1],
  ['What do green leaves use light to help make?','Food for the plant',['Small stones','Plastic','Soil from nothing'],'Green plants make sugars using energy from light.',1],
- ['Which gas do green plants use to make sugars?','Carbon dioxide',['Helium only','Neon only','None'],'Photosynthesis uses carbon dioxide and water with light energy.',2],
- ['To compare light fairly, what could stay the same?','Plant type, water and observation time',['Nothing','Only the pot’s label','The question alone'],'Control other important conditions while changing light.',2],
- ['Why does our pretend plant change faster than a real one?','It is a simplified model',['Real plants never grow','Screens produce soil','All plants grow instantly'],'Real growth happens over time; this model only illustrates conditions.',2]
+ ["One plant in shade grew 4 cm but has pale leaves. Another in light grew 2 cm and has green leaves. What can you conclude?", "Height alone cannot show which plant is healthier", ["The tallest plant must be healthiest", "The shaded plant made more food for certain", "The shorter plant did not grow"], "Measure more than height. Pale leaves and a stretched stem can be signs of too little light.", 2],
+ ["A sunny plant gets water every day. A shaded plant gets none. What stops this being a fair test of light?", "The amount of water also changed", ["Both plants have leaves", "They were checked on the same day", "There were two places to compare"], "If water and light both differ, either could explain a change in growth.", 2],
+ ["A green plant has enough water but stays in the dark for a week. Why can stored food help only for a while?", "It needs light energy to make more sugar", ["Roots turn darkness into sugar", "Its leaves make more sugar in darkness", "Water alone replaces all the sugar it uses"], "The plant can use sugar it stored earlier, but photosynthesis needs light.", 2]
  ]);
  unit('magnets','science','Magnet mystery','🧲','magnets',[
- 'Magnets can pull some things without touching them. Try turning one magnet around in our model.',
- 'Magnets have north and south poles. Unlike poles attract; like poles repel. Not every metal is strongly attracted by a magnet.',
- 'A magnetic force can act across a gap. Compare pole combinations while keeping distance the same to explore a pattern.'
+ "One way round, the magnets pull together. Turn one around and they push apart.",
+ "The ends are called poles. Two matching poles push apart. Different poles pull together, even across a small gap.",
+ "Like poles repel and unlike poles attract. Distance also affects the force. If you change both the gap and the poles at once, you cannot tell which caused a difference in strength."
  ],[
  ['Can a magnet pull some objects without touching them?','Yes',['Never','Only if painted','Only in water'],'Magnetic forces can act across a gap.',0],
  ['What might a magnet attract?','An iron nail',['A wooden spoon','A paper cup','A plastic ruler'],'Iron is strongly attracted to an ordinary magnet.',0],
@@ -133,14 +133,14 @@ var ETM_DATA=(function(){
  ['What do north and south poles do when brought close?','Attract',['Always repel','Disappear','Make sunlight'],'Unlike magnetic poles attract.',1],
  ['What do two north poles do when brought close?','Repel',['Always attract','Melt','Turn into wood'],'Like magnetic poles repel.',1],
  ['Are all metals strongly attracted to an ordinary magnet?','No',['Yes; every metal','Only if shiny','Only if heavy'],'Iron is strongly attracted, but metals such as copper are not in the same way.',1],
- ['Which pair repels?','South facing south',['North facing south','South facing north','Either pair of unlike poles'],'Two like poles repel.',2],
- ['For a fair comparison of poles, what should you keep the same?','The distance and the magnets',['Nothing','Only the wall colour','Only the day'],'Distance and magnet strength affect the comparison.',2],
- ['What is evidence that magnets exert a force?','A change in another object’s motion',['Their colour alone','Their price','Their label’s font'],'Forces can change an object’s motion, even without contact.',2]
+ ["Two hidden magnet ends push apart. One end is north. What can you infer about the other?", "It is north too", ["It must be south", "It has no pole", "It must be made of wood"], "Repulsion tells you the facing poles are alike. Two north poles push apart.", 2],
+ ["A magnet pulls a clip across 1 cm but not across 5 cm. What does the test show?", "The pull was enough to move this clip at the smaller gap", ["There is no magnetic force beyond 1 cm", "The clip changed metal as the gap grew", "The poles switched at the larger gap"], "Motion is evidence of enough force to move the clip. No movement does not prove there was no force.", 2],
+ ["Two magnets attract. You turn both around without swapping places. What do you predict?", "They still attract", ["They now repel", "Only the left one pulls", "Both lose their poles"], "N facing S becomes S facing N. The pair is still unlike.", 2]
  ]);
  unit('floating','science','Float or sink?','⛵','floating',[
- 'Predict what happens in water. Try a cork, a steel spoon and an empty sealed bottle in our pretend bowl.',
- 'Whether something floats depends on its material, shape and what is inside. An empty sealed bottle can float because it contains air.',
- 'Water pushes upward on immersed objects. A steel ship can float because its hull displaces enough water; a small solid steel spoon usually sinks.'
+ "Watch the spoon go to the bottom. It sinks. Try the cork: it stays on top and floats.",
+ "Water pushes up on both. The cork floats when that push balances its weight. The spoon sinks because the upward push is too small.",
+ "Water pushes up on an object that moves water out of the way. A hollow boat can push aside enough water to support its weight. Adding a load makes it sit lower."
  ],[
  ['What does “float” mean here?','Stay at the water’s surface',['Fall to the bottom','Turn into ice','Become invisible'],'A floating object is supported at the surface.',0],
  ['Which example floats in our model?','A cork',['A solid steel spoon','A granite pebble','An iron nail'],'Cork normally floats in water.',0],
@@ -148,9 +148,9 @@ var ETM_DATA=(function(){
  ['Why can an empty sealed plastic bottle float?','It contains air and has low average density',['All plastic must float','It has no weight','Water cannot touch it'],'The trapped air helps lower the average density of the whole bottle.',1],
  ['Does every heavy object sink?','No',['Yes; always','Only in daytime','Only if it is long'],'Large ships can float; mass alone does not decide the result.',1],
  ['What should happen after a prediction is wrong?','Use the observation to improve your idea',['Hide it','Stop all experiments','Keep calling it correct'],'Unexpected results can help us learn.',1],
- ['How can a steel ship float while a steel spoon sinks?','Its hollow hull displaces enough water',['Ships have no mass','Steel changes into wood','Only spoons feel gravity'],'Shape and the whole object’s average density matter.',2],
- ['Which force acts upward on an immersed object?','Buoyancy',['Only a downward push','No force','Sunlight'],'Water exerts an upward buoyant force.',2],
- ['Would opening and filling the bottle change the test?','Yes; the contents and average density change',['No; contents never matter','Only the colour changes','It stops being matter'],'Changing the air and water inside changes the whole object.',2]
+ ["A foil ball sinks. The same foil shaped into a wide boat floats. What changed?", "Its shape lets it push more water aside before flooding", ["The foil lost its weight", "The water stopped pulling down on the foil", "The foil became a different metal"], "The hollow shape can displace enough water for the upward push to balance the boat’s weight.", 2],
+ ["You add a coin to a floating toy boat. It stays afloat. What do you expect to see?", "It sits lower and displaces more water", ["It sits higher because the coin is small", "It stays at exactly the same depth", "It no longer feels an upward push"], "The extra weight needs a greater upward push. The boat settles lower and pushes aside more water.", 2],
+ ["A heavy sealed container floats and a light steel spoon sinks. Which rule fits both?", "Weight alone cannot tell you what will float", ["All heavy objects sink", "All small objects float", "Every metal object must sink"], "The water an object can displace matters as well as its weight.", 2]
  ]);
  unit('ireland','geography','Explore Ireland','☘️','ireland',[
  'Explore the island of Ireland. Find a city by the sea, then look for a town inland.',
@@ -183,5 +183,38 @@ var ETM_DATA=(function(){
  ['Cross Bass Strait heading south. Which city could you visit on that island?','Hobart',['Sydney','Perth','Darwin'],'Bass Strait separates Tasmania from the mainland.',2]
  ]);
  units.forEach(function(u,i){u.order=i});
+ const experiments={
+ "daynight": [
+  "Move the dot into the dark.",
+  "Turn Earth until the dot goes dark. Where is the Sun now?",
+  "Start with the dot in daylight. Predict where it will be after half a turn, then test it."
+ ],
+ "water": [
+  "Tap Make rain. Where do the drops land?",
+  "Tap Warm the water, then Cool the vapour. What changes?",
+  "A puddle shrinks even on a day without rain. Where could the water go? Try warming and cooling it in the picture."
+ ],
+ "forces": [
+  "Tap Roll the ball. Which way does it go?",
+  "Roll the ball. Make the ramp steeper and roll again.",
+  "Try a gentle slope and a steep one. Keep the ball and starting point the same. Which run takes less time?"
+ ],
+ "plants": [
+  "Tap See what happens. Then switch off Water and try again.",
+  "Leave Water ticked. Try the plant with Light and then without it.",
+  "Compare a plant in light with one in shade. What will you keep the same?"
+ ],
+ "magnets": [
+  "Tap Bring them close. Now turn one magnet and try again.",
+  "Look at the letters on the ends. Turn one magnet, then bring them close.",
+  "Predict the motion before and after turning one magnet. Compare the pairs from the same gap."
+ ],
+ "floating": [
+  "Pick the spoon. Tap Test it in the model.",
+  "Guess which will float: a cork or a steel spoon? Test both.",
+  "Test the spoon and the empty sealed bottle. Could something heavier than the spoon still float?"
+ ]
+};
+ units.forEach(u=>{if(experiments[u.id]){u.tryIt=experiments[u.id];u.questions.filter(q=>q.level===2).forEach((q,i)=>q.id=u.id+':investigate:'+i)}});
  return {units:units,levels:['First steps','Growing','Challenge'],subjects:{maths:['Maths','🔢'],reading:['Reading','📚'],music:['Music','🎹'],geography:['Geography','🌍'],science:['Science','🔬']},sources:[['Earth, day and night','https://www.nasa.gov/learning-resources/for-kids-and-students/what-is-earth-grades-k-4/'],['Oceans','https://oceanservice.noaa.gov/facts/biggestocean.html'],['Water cycle','https://water.usgs.gov/edu/watercycle-kids-beg.html']]};
 })();
