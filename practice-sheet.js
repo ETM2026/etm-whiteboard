@@ -5,15 +5,16 @@ window.ETMSheet=(()=>{
   function validPage(p){
     if(!p||typeof p!=='object')return false;
     return p.kind==='table'?Number.isInteger(p.step)&&p.step>=1&&p.step<=12:
-      p.kind==='question'&&typeof p.text==='string'&&p.text.trim().length>0&&p.text.length<=160;
+      ['question','equations'].includes(p.kind)&&typeof p.text==='string'&&p.text.trim().length>0&&p.text.length<=160;
   }
-  function room(partner,teacher){
+  function room(partner,teacher,initial){
     const actor=accessSession,d=node('dialog',undefined,document.body,'sheetDialog');
     const title='Practice with '+(teacher?partner:'Dad');d.setAttribute('aria-label',title);
     const head=node('div',undefined,d,'sheetHead');node('h2',title,head);
     const close=btn('×',leave,head,'quietButton');close.setAttribute('aria-label','Leave practice');
     const status=node('p','',d);status.setAttribute('role','status');
     const body=node('div',undefined,d),footer=node('div',undefined,d,'sheetFooter');
+    let board,working,workDirty=false;
     let wire,offer,inviteVersion=0,page,version=0,answers=[],fields=[],dirty=false,clock=0,closed=false;
     const live=()=>!closed&&actor===accessSession&&familyActor();
     function report(msg){if(live()&&status.textContent!==msg)status.textContent=msg}
@@ -28,17 +29,17 @@ window.ETMSheet=(()=>{
     d.oncancel=e=>{e.preventDefault();leave()};d.showModal();
     function editor(){
       body.replaceChildren();footer.replaceChildren();body.className='sheetForm';
-      const select=learningSelect(body,'What shall we practise?', [['table','Times table'],['question','My own question']],page?.kind||'table');
+      const select=learningSelect(body,'What shall we practise?', [['table','Times table'],['question','My own question'],['equations','Equation builder']],page?.kind||initial||'table');
       const table=learningSelect(body,'Choose a table',Array.from({length:12},(_,i)=>[String(i+1),(i+1)+' times table']),String(page?.step||10));
       const label=node('label','Your question',body),input=node('input',undefined,label);input.maxLength=160;input.value=page?.text||'';input.placeholder='e.g. What is half of 68?';
-      function toggle(){label.hidden=select.value!=='question';table.parentElement.hidden=select.value!=='table'}
+      const pad=node('div',undefined,body);window.ETMEquations.keypad(pad,k=>{if(!input.disabled)input.value=k==='⌫'?input.value.slice(0,-1):(input.value+k).slice(0,160)});function toggle(){pad.hidden=select.value!=='equations';label.hidden=select.value==='table';table.parentElement.hidden=select.value!=='table'}
       select.onchange=toggle;toggle();
       const submit=btn(wire?.open?'Send new sheet':'Invite '+partner,async()=>{
-        const next=select.value==='table'?{kind:'table',step:Number(table.value)}:{kind:'question',text:input.value.trim()};
+        const next=select.value==='table'?{kind:'table',step:Number(table.value)}:{kind:select.value,text:input.value.trim()};
         if(!validPage(next)){input.focus();return}
         if(wire?.open){
           if(wire.pending>=40){report('Reconnecting. Try sending the new sheet again in a moment.');return}
-          if(answers.some(Boolean)&&!confirm('Start a new sheet and clear the answers on this one?'))return;
+          if((answers.some(Boolean)||working?.lines.some(Boolean))&&!confirm('Start a new sheet and clear the answers on this one?'))return;
           startPage(next);wire.send({t:'sheet',page,version});return;
         }
         const gen=++inviteVersion;
@@ -57,12 +58,18 @@ window.ETMSheet=(()=>{
       if(wire?.open)btn('Back to sheet',render,footer,'quietButton');
     }
     function startPage(next){
-      page=next;version++;answers=Array(page.kind==='table'?12:1).fill('');dirty=false;render();
+      page=next;board=null;working=null;workDirty=false;version++;answers=Array(page.kind==='table'?12:1).fill('');dirty=false;render();
     }
     function render(){
       body.replaceChildren();footer.replaceChildren();fields=[];body.className='';
       const paper=node('section',undefined,body,'sheetPaper');
       node('h3',page.kind==='table'?page.step+' times table':page.text,paper);
+      if(page.kind==='equations'){
+        board=window.ETMEquations.mount(node('div',undefined,paper),page.text,teacher,state=>{working=state;workDirty=true;flush()},i=>wire?.send({t:'point',version,i}));
+        if(working)board.receive(working);
+        if(teacher)btn('Choose next sheet',editor,footer,'quietButton');
+        report(teacher?'Follow the working. Tap Point here to show a step.':'What would you do first? Tap the numbers and symbols.');return;
+      }
       answers.forEach((answer,i)=>{
         const line=node('div',undefined,paper,'sheetLine'),text=page.kind==='table'?window.ETMTables.bookRow('times',page.step,i+1).label+' =':'Your answer';
         const label=node('label',text,line);
@@ -80,12 +87,13 @@ window.ETMSheet=(()=>{
       report(teacher?'Watch '+partner+' fill in the answers.':'Dad can see the answers as you type.');
     }
     function flush(){
+      if(workDirty&&live()&&!teacher&&wire?.open&&wire.pending<4){wire.send({t:'work',version,state:working});workDirty=false}
       if(!live()||teacher||!dirty||!wire?.open||wire.pending>=4)return;
       wire.send({t:'answers',version,values:answers.slice()});dirty=false;
     }
     function disconnected(){
       if(!live())return;report('The other device left. This sheet has ended.');
-      fields.forEach(el=>el.disabled=true);footer.replaceChildren();
+      body.querySelectorAll("button,input,select").forEach(el=>el.disabled=true);footer.replaceChildren();
     }
     function attach(w){
       wire=w;clock=Date.now();let lastPulse=0;
@@ -94,6 +102,7 @@ window.ETMSheet=(()=>{
         if(msg.t==='sheet'&&!teacher&&validPage(msg.page)&&Number.isSafeInteger(msg.version)&&msg.version>version){
           version=msg.version-1;startPage(msg.page);return;
         }
+        if(page?.kind==='equations'&&msg.version===version){if(teacher&&msg.t==='work'&&window.ETMEquations.valid(msg.state)){working=msg.state;board?.receive(working)}if(!teacher&&msg.t==='point')board?.highlight(msg.i);return}
         if(msg.t==='answers'&&teacher&&msg.version===version&&Array.isArray(msg.values)&&msg.values.length===answers.length&&msg.values.every(v=>typeof v==='string'&&v.length<=100)){
           answers=msg.values.slice();fields.forEach((el,i)=>{el.textContent=answers[i]||'—'});return;
         }
@@ -113,7 +122,7 @@ window.ETMSheet=(()=>{
     return active={dialog:d,attach,dispose,live,report};
   }
   return {
-    setup(name){if(active){active.dialog.focus();return}if(familyActor()&&dadUnlocked()&&FAMILY.includes(name))room(name,true)},
+    setup(name,initial){if(active){active.dialog.focus();return}if(familyActor()&&dadUnlocked()&&FAMILY.includes(name))room(name,true,initial)},
     describe(){return !active&&familyActor()&&accessSession.role==='child'?{title:'Practise with Dad',yes:'Join practice'}:null},
     async joinVisit(_,who,id){
       if(active||!familyActor()||accessSession.role!=='child'||who.name!=='Dad')return;

@@ -14,6 +14,7 @@ window.ETMDraw=(()=>{
     if(active){active.dialog.focus();return}
     const panel=openDrawer('Draw together');
     if(!familyActor()){node('p','Choose your family profile to invite someone to draw.',panel);return}
+    if(accessSession.role==='dad'){const maths=btn('Maths sheet',()=>{list.replaceChildren();const children=invites.names().filter(n=>FAMILY.includes(n));if(!children.length)node('p','Ask your child to open ETM and choose their profile.',list);for(const name of children)btn('Start maths with '+name,()=>{cleanupDrawer();window.ETMSheet.setup(name,'equations')},list,'primaryButton')},panel,'lPill')}
     node('p','Invite someone to draw on a copy of this page. You’ll both have a pen.',panel);
     const list=node('div',undefined,panel,'drawerGrid'),actor=accessSession;
     function refresh(){

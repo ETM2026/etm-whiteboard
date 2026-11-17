@@ -72,7 +72,7 @@ window.ETMHome={
         put('etmAccessV9:'+m.family,JSON.stringify(m));put('etmTrustV9:'+m.family,salt);put('etmRoom',m.family);put('etmMathsAIEndpoint:'+m.family,homeService);
         window.localStorage.setItem('ETM.activeStore',prefix);
         location.replace(location.pathname);
-      }catch(error){status.textContent=error.message;go.disabled=false}
+      }catch(error){status.textContent=error instanceof TypeError||error.name==='TimeoutError'?'ETM couldn’t reach family sign-in. Check your connection or try another network.':error.message;go.disabled=false}
     },a,'primaryButton');
     input.onkeydown=e=>{if(e.key==='Enter'&&!go.disabled)go.click()};input.focus();
   }
