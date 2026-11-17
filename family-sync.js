@@ -32,7 +32,10 @@ async function syncApply(r){var v=r.value,name=r.owner;if(r.collection==='pieces
  if(!v)return;
  if(r.collection==='creations'){var list=v.kind==='quiz'?'challenges':'stories';if(v.item&&typeof v.item.id==='string'){var old=learned[list];learned[list]=syncUnion(old,[v.item],'id');if(keepLearning()===false){learned[list]=old;throw Error('Could not save this creation.')}}return}
  if(r.collection==='settings'){var settings={...familySettings,[name]:v};if(!writeJSON('etmFamilySettingsV7',settings))throw Error('Could not save family settings.');familySettings=settings}
- if(r.collection==='learning'){var state=ETM_CORE.fresh();state.profiles[name]=v;if(!ETM_CORE.validateState(state))throw Error('Invalid learning data.');syncSaveLearning({...learningState,profiles:{...learningState.profiles,[name]:v}})}
+ if(r.collection==='learning'){var state=ETM_CORE.fresh();state.profiles[name]=v;if(!ETM_CORE.validateState(state))throw Error('Invalid learning data.');const localPaper=learningState.profiles[name]?.familyPaper;
+ if(localPaper)v={...v,familyPaper:ETM_CORE.mergePaper(localPaper,v.familyPaper)};
+ syncSaveLearning({...learningState,profiles:{...learningState.profiles,[name]:v}});
+ if(v.familyPaper)window.ETMFriends?.refreshPaper?.(name,v.familyPaper)}
  if(r.collection==='study'){syncSaveLearning({...learningState,piano:{...learningState.piano,[name]:ETM_STUDY.profile(v)}})}
  if(r.collection==='preferences'&&r.owner===learningName()){syncSaveLearning({...learningState,preferences:v})}
  if(r.collection==='progress')await acceptSignedResult(v);

@@ -1,80 +1,115 @@
-// Shared arithmetic working. Each draft line belongs to the child.
+// A sheet belongs to both players. Each square has an independent revision so
+// simultaneous edits on different lines survive delivery in either order.
 window.ETMEquations = (() => {
-  const alphabet = /^[0-9+×÷−= ]{0,48}$/;
-  const sum = /^(\d+)\s*([+×÷−])\s*(\d+)(?:\s*=\s*(\d+))?$/;
-  function calculate(match) {
-    const a = Number(match[1]), b = Number(match[3]);
-    return ({'+':a+b,'−':a-b,'×':a*b,'÷':a/b})[match[2]];
-  }
-  function valid(s) {
-    return !!s && Array.isArray(s.lines) && s.lines.length>0 && s.lines.length<=20 &&
-      s.lines.every(v=>typeof v==='string' && alphabet.test(v)) &&
-      typeof s.columns==='boolean' && typeof s.done==='boolean';
-  }
-  function normal(text) {return text.replace(/-/g,'−').replace(/[xX*]/g,'×').replace(/\//g,'÷')}
-  function keypad(parent,press) {
-    const keys=node('div',undefined,parent,'eqKeys');
-    for(const key of ['7','8','9','÷','4','5','6','×','1','2','3','−','0','=','⌫','+']){
-      const b=btn(key,()=>press(key),keys,'lPill');
-      if(key==='⌫')b.setAttribute('aria-label','Delete last symbol');
+  const width=12, maxLines=16;
+  const keys=Array.from('1234567890+−×÷=().□');
+  const valid=ETM_CORE.validPaper;
+  function mount(parent,teacher,send,onPoint){
+    const cells=new Map(), squares=[],history=[];
+    let rows=4, selected=0,clock=0,reading=false;
+    const snapshot=()=>({rows,cells:Array.from(cells.values())});
+    node('p','Tap a square, then a number or sign. Or drag a tile onto the paper.',parent,'paperTip');
+    const toolbar=node('div',undefined,parent,'paperTools');
+    const view=btn('See full working',()=>{reading=!reading;paint()},toolbar,'lPill');
+    let pointing=false,pointed=null;
+    const point=onPoint&&btn('Point to a square',()=>{
+      pointing=!pointing;point.setAttribute('aria-pressed',String(pointing));
+      point.textContent=pointing?'Tap the square to point':'Point to a square';
+    },toolbar,'lPill');
+    function highlight(i){
+      if(!Number.isInteger(i)||i<0||i>=squares.length)return;
+      pointed?.classList.remove('duoPoint');pointed=squares[i];pointed.classList.add('duoPoint');
     }
-  }
-  function columns(line,parent){
-    const match=line.match(/^(\d+)\s*([+×÷−])\s*(\d*)(?:\s*=\s*(\d*))?$/);
-    if(!match)return;
-    const box=node('div',undefined,parent,'eqColumns');
-    node('div',match[1],box);node('div',match[2]+' '+(match[3]||'□'),box);
-    node('strong',match[4]||'□',box);
-  }
-  function mount(parent,question,teacher,send,point){
-    let state={lines:[''],columns:false,done:false},previous=[],editing=0;
-    function remember(){previous.push(JSON.stringify(state));if(previous.length>100)previous.shift()}
-    function update(){send(structuredClone(state));paint()}
-    function edit(value){
-      if(teacher||state.done||!alphabet.test(value)||value===state.lines[editing])return;
-      remember();state.lines[editing]=value;update();
-    }
-    let marked=-1;
-    function paint(){
-      parent.replaceChildren();
-      if(!teacher)btn(state.columns?'Use line view':'Use columns',()=>{state.columns=!state.columns;update()},parent,'quietButton');
-      state.lines.forEach((line,i)=>{
-        const row=node('div',undefined,parent,'eqStep');
-        row.classList.toggle('eqPoint',marked===i);
-        node('small','Step '+(i+1),row);
-        const val=node('strong',line||'□',row);
-        if(state.columns)columns(line,row);
-        if(teacher)btn('Point here',()=>{marked=i;point(i);paint()},row,'quietButton');
-        else if(!state.done&&i!==editing)btn('Edit',()=>{editing=i;paint()},row,'quietButton');
-        else if(!teacher&&!state.done)val.setAttribute('aria-label','Current working line');
-      });
-      if(state.done){node('p','Final answer: '+state.lines.at(-1).split('=').at(-1).trim(),parent,'eqResult');}
-      if(teacher)return;
-      const msg=node('p','',parent);msg.setAttribute('role','status');
-      if(!state.done){
-        keypad(parent,k=>edit(k==='⌫'?state.lines[editing].slice(0,-1):state.lines[editing]+k));
-        function advance(done){
-          const line=state.lines[editing],m=line.match(sum);
-          if(!m||m[4]===undefined){msg.textContent='Finish this line with = and your answer.';return}
-          if(Number(m[4])!==calculate(m)){msg.textContent='Check this line once more.';return}
-          if(done){
-            if(state.lines.some(v=>{const t=v.match(sum);return !t||t[4]===undefined||Number(t[4])!==calculate(t)})){msg.textContent='Check each line before finishing.';return}
-            const target=normal(question).replace(/[=?\s]+$/,'').trim().match(sum);
-            if(target&&Number(state.lines.at(-1).split('=').at(-1))!==calculate(target)){msg.textContent='That step works. Look at the original question. Is there another step?';return}
-          }
-          if(!done&&editing===19){msg.textContent='You can use up to 20 lines.';return}
-          remember();
-          if(done)state.done=true;
-          else if(editing===state.lines.length-1){state.lines.push(m[4]);editing++}
-          else editing++;
-          update();
-        }
-        btn('Next line',()=>advance(false),parent,'primaryButton');btn('Finish answer',()=>advance(true),parent,'quietButton');
+    const undo=btn('Undo my last edit',()=>{
+      const previous=history.pop();if(!previous)return;
+      selected=previous.index;write(previous.index,previous.value,false);
+    },toolbar,'lPill');
+    const scroll=node('div',undefined,parent,'paperScroll');
+    const grid=node('div',undefined,scroll,'mathPaperGrid');
+    const palette=node('div',undefined,parent,'paperTiles');
+    const actions=node('div',undefined,parent,'paperTools');
+    function choose(i){selected=i;paint()}
+    function write(index,value,remember=true){
+      const old=cells.get(index);
+      if((old?.[1]||'')!==value){
+        const entry=[index,value,++clock,teacher?1:0];cells.set(index,entry);
+        if(remember)history.push({index,value:old?.[1]||'',entry});
+        send(snapshot());
       }
-      const undo=btn('Undo',()=>{if(!previous.length)return;state=JSON.parse(previous.pop());editing=Math.min(editing,state.lines.length-1);update()},parent,'quietButton');undo.disabled=!previous.length;
+      selected=value?Math.min(index+1,rows*width-1):index;paint();
     }
-    paint();
-    return {receive(s){if(teacher&&valid(s)){state=s;paint()}},highlight(i){if(Number.isInteger(i)&&i>=0&&i<state.lines.length){marked=i;paint();parent.querySelector('.eqPoint')?.scrollIntoView({block:'nearest'})}}};
+    function nextLine(){
+      const target=(Math.floor(selected/width)+1)*width;
+      if(target>=maxLines*width)return;
+      if(target>=rows*width){rows++;send(snapshot())}
+      choose(target);squares[target].focus();
+    }
+    for(const key of keys){
+      const tile=btn(key,()=>{if(!suppress)write(selected,key)},palette,'mathTile');
+      if(key==='□')tile.setAttribute('aria-label','Unknown number');
+      let start=null,suppress=false;
+      tile.onpointerdown=e=>{
+        if(e.button!==0)return;
+        start=[e.clientX,e.clientY];suppress=false;tile.setPointerCapture(e.pointerId);
+      };
+      const target=e=>document.elementFromPoint(e.clientX,e.clientY)?.closest('.paperSquare');
+      tile.onpointermove=e=>{
+        if(!start)return;
+        if(Math.hypot(e.clientX-start[0],e.clientY-start[1])<6&&!suppress)return;
+        suppress=true;grid.querySelector('.dropHere')?.classList.remove('dropHere');
+        const hit=target(e);if(hit&&grid.contains(hit))hit.classList.add('dropHere');
+      };
+      tile.onpointerup=e=>{
+        if(!start)return;
+        const hit=target(e);
+        if(hit&&grid.contains(hit)){suppress=true;write(Number(hit.dataset.index),key)}
+        start=null;grid.querySelector('.dropHere')?.classList.remove('dropHere');
+        setTimeout(()=>{suppress=false},0);
+      };
+      tile.onpointercancel=()=>{start=null;grid.querySelector('.dropHere')?.classList.remove('dropHere')};
+    }
+    btn('Erase square',()=>write(selected,''),actions,'lPill');
+    const next=btn('Next line ↓',nextLine,actions,'lPill');
+    function paint(){
+      while(squares.length<rows*width){
+        const i=squares.length,b=btn('',()=>{
+          if(pointing){highlight(i);onPoint(i);point.click();return}
+          choose(i);
+        },grid,'paperSquare');
+        b.dataset.index=i;squares.push(b);
+        b.onkeydown=e=>{
+          const mapped=({'-':'−','*':'×','/':'÷',x:'×'})[e.key]||e.key;
+          const offset=({ArrowLeft:-1,ArrowRight:1,ArrowUp:-width,ArrowDown:width})[e.key];
+          if(e.ctrlKey||e.metaKey||e.altKey)return;
+          if(keys.includes(mapped))write(i,mapped);
+          else if(e.key==='Delete'||e.key==='Backspace')write(i,'');
+          else if(offset)choose(Math.max(0,Math.min(rows*width-1,i+offset)));
+          else if(e.key==='Enter')nextLine();else return;
+          e.preventDefault();squares[selected].focus();
+        };
+      }
+      while(history.length&&cells.get(history.at(-1).index)!==history.at(-1).entry)history.pop();
+      palette.hidden=actions.hidden=undo.hidden=reading;
+      grid.classList.toggle('reading',reading);
+      scroll.classList.toggle('reading',reading);
+      next.disabled=selected>=(maxLines-1)*width;
+      undo.disabled=!history.length;view.textContent=reading?'Back to editing':'See full working';
+      squares.forEach((b,i)=>{
+        const value=cells.get(i)?.[1]||'';b.textContent=value;
+        b.setAttribute('aria-label','Line '+(1+Math.floor(i/width))+', square '+(1+i%width)+(value?', '+value:', blank'));
+        b.disabled=reading;b.tabIndex=i===selected&&!reading?0:-1;b.classList.toggle('chosen',i===selected&&!reading);
+      });
+    }
+    function receive(s){
+      if(!valid(s))return;
+      rows=Math.max(rows,s.rows);
+      for(const c of s.cells){
+        const old=cells.get(c[0]);clock=Math.max(clock,c[2]);
+        if(!old||c[2]>old[2]||(c[2]===old[2]&&(c[3]>old[3]||c[3]===old[3]&&c[1]>old[1])))cells.set(c[0],c);
+      }
+      paint();
+    }
+    paint();return {receive,snapshot,highlight};
   }
-  return {mount,keypad,normal,valid};
+  return {mount,valid};
 })();

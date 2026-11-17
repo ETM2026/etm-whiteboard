@@ -1082,7 +1082,7 @@ body[data-room=tables] #clubhouse{background:#f5f8fc}body[data-room=tables] .clu
   function shuffled(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=r[i];r[i]=r[j];r[j]=t}return r}
   function listenButton(parent,text){btn('🔊 Hear it',function(){say(text)},parent)}
   function detective(){var a=shell('Picture detective','🔎'),score=0,target,round=node('h2','',a),grid=node('div',undefined,a,'pictureGrid');
-    function next(){grid.innerHTML='';var choices=shuffled(PICTURES).slice(0,6);target=random(choices);var prompt='Find the '+target[1]+'.';round.textContent=prompt;if(childName()==='Matthew')say(prompt);choices.forEach(function(p){btn(p[0],function(){if(p[1]===target[1]){score++;feedback('You found it! '+score+' / 5',true);if(score===5){win('Picture detective');score=0}next()}else{feedback('Have another look. You can do it!');say('Try again. Find the '+target[1])}},grid,'pictureButton')})}
+    function next(){grid.innerHTML='';var choices=shuffled(PICTURES).slice(0,6);target=random(choices);var prompt='Find the '+target[1]+'.';round.textContent=prompt;if(childName()==='Matthew')say(prompt);choices.forEach(function(p){btn(p[0],function(){if(p[1]===target[1]){score++;feedback('You found the '+p[1]+'! '+score+' / 5',true);for(const item of grid.children)item.disabled=true;this.classList.add('pictureFound');if(score===5){win('Picture detective');score=0}activityTimers.push(setTimeout(()=>{if(grid.isConnected)next()},700))}else{feedback('Have another look. You can do it!');say('Try again. Find the '+target[1])}},grid,'pictureButton')})}
     next();btn('🔊 Hear the clue',function(){say(round.textContent)},a);btn('🏡 Around-the-room hunt',function(){var clue=random(['Find something red.','Find something round.','Find something beginning with B.','Bring something soft to the camera.']);round.textContent=clue;grid.innerHTML='';say(clue);btn('I found it! 🙌',function(){feedback('Show your family on camera!',true)},grid)},a)}
   function counting(){var a=shell('Fill the fishing basket','🧺'),level=pl&&pl.n==='Matthew'?5:10,want=1+Math.floor(Math.random()*level),added=0;node('h2','Put '+want+' fish in the basket.',a);listenButton(a,'Put '+want+' fish in the basket');var zone=node('div',undefined,a,'basketZone'),pool=node('div',undefined,zone,'fishPool'),basket=node('div','🧺',zone,'basket');basket.tabIndex=0;basket.setAttribute('aria-label','Fish basket');
     var tally=node('h2','0 fish',a);function add(f){if(f.disabled)return;f.disabled=true;f.style.opacity='.25';added++;node('span','🐟',basket);tally.textContent=added+' fish';say(String(added))}
@@ -1289,7 +1289,18 @@ next()}
     let build,hear,mic;
     subtitle.setAttribute('role','status');
     function next(){word.textContent=words[index%words.length];progress.textContent='Word '+(correct+1)+' of 5';subtitle.textContent=speech?'Say the word, or build it with letters.':'You can build this word with letters.';build.textContent='Build '+word.textContent.toUpperCase();hear.textContent='🔊 Hear '+word.textContent.toUpperCase()}
-    function finish(count){const end=shell('Five words explored!','🌟');node('p',count+' read aloud · '+(5-count)+' built with letters.',end,'roomIntro');btn('Choose another activity',readRoom,end,'primaryButton');win(count===5?'Read aloud':'Read & build')}
+    function finish(count){const end=shell('Five words explored!','🌟');node('p',count+' read aloud · '+(5-count)+' built with letters.',end,'roomIntro');const sentences={cat:'The cat sat on a mat.',dog:'The dog can run.',sun:'The sun is up.',pig:'The pig is in the mud.',bus:'We go on the bus.',fish:'The fish can swim.',car:'The car is red.',duck:'The duck can swim.',ball:'I can kick the ball.',frog:'The frog can jump.',bee:'The bee can fly.',apple:'I ate an apple.'};
+      const last=words[index%words.length];if(Object.hasOwn(sentences,last)){
+        const extra=node('div',undefined,end);
+        btn('Find '+last+' in a sentence',()=>{
+          extra.replaceChildren();const clue=node('p','Tap the word '+last+'.',extra);clue.setAttribute('role','status');
+          for(const token of sentences[last].split(' '))btn(token,()=>{
+            if(token.toLowerCase().replace(/[^a-z]/g,'')!==last){clue.textContent='Look for '+last+' again.';return}
+            extra.replaceChildren();node('strong',sentences[last],extra);say(sentences[last]);
+          },extra,'lPill');
+        },extra,'quietButton');
+      }
+      btn('Choose another activity',readRoom,end,'primaryButton');win(count===5?'Read aloud':'Read & build')}
     function accepted(){if(!a.isConnected)return;earn(childName(),'reading',{topic:'Reading',detail:'Read '+word.textContent,correct:1,attempts:1,coins:0});spoken++;correct++;if(correct>=5){finish(spoken);return}index++;next();feedback('You got it. Ready for another?',true)}readingAccepted=accepted;
     mic=btn(speech?'🎤 Try saying it':'Read to Dad',function(){
       const target=word.textContent;send('clubread',{who:childName(),word:target});
@@ -1301,9 +1312,9 @@ next()}
           if(!current())return;
           const guesses=Array.from(e.results[0]).map(x=>x.transcript.toLowerCase().replace(/[^a-z ]/g,'').trim());
           if(guesses.includes(target)){accepted();return}
-          subtitle.textContent='I heard “'+guesses[0]+'”. Hear the word, try again or build it.';
+          subtitle.textContent='I heard “'+guesses[0]+'”. Hear the word, try again or build it.';say('Try again, or build the word with letters.');
         };
-        r.onerror=e=>{if(current())subtitle.textContent=e.error==='not-allowed'?'The microphone is off. Tap Build '+target.toUpperCase()+'.':'I missed that. Try saying it again or tap Build '+target.toUpperCase()+'.'};
+        r.onerror=e=>{if(current()){subtitle.textContent=e.error==='not-allowed'?'The microphone is off. Tap Build '+target.toUpperCase()+'.':'I missed that. Try saying it again or tap Build '+target.toUpperCase()+'.';say('Tap Build to use letters, or try saying the word again.')}};
         r.onend=()=>{if(current()&&subtitle.textContent==='Listening…')subtitle.textContent='Try saying it again or build the word.';if(readingRecognition===r)readingRecognition=null};
         r.start();
       }catch{readingRecognition=null;subtitle.textContent='The microphone is unavailable. Tap Build '+target.toUpperCase()+'.'}
@@ -2802,7 +2813,7 @@ var ETM_PDF_WORKER="LyoqCiAqIEBsaWNzdGFydCBUaGUgZm9sbG93aW5nIGlzIHRoZSBlbnRpcmUg
 
 
   // Optional maths AI module; failure never blocks the existing family app.
-  (function(){var version='20261117-equation-sheet-20.4',config=document.createElement('script');config.src='maths-ai-config.js?v='+version;config.onload=load;config.onerror=load;document.head.appendChild(config);async function load(){try{for(var cssFile of ['maths-coach.css','learning.css']){var cssResponse=await fetch(cssFile+'?v='+version,{cache:'no-cache'});if(!cssResponse.ok)throw Error('Learning styles unavailable');var style=document.createElement('style');style.dataset.etmAsset=cssFile;style.textContent=await cssResponse.text();document.head.appendChild(style);}for(var jsFile of ['maths-coach.js','ai-lab.js','learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','piano-audio.js','family-games.js','atlas.js','learning.js','number-tables.js','piano-study.js','maths-discovery.js','family-sync-core.js','family-sync.js','screen-share.js','connection-health.js','family-reconnect.js','question-controls.js','family-home.js','private-family.js','friend-games.js','friend-room.js','game-invites.js','draw-together.js','equation-sheet.js','practice-sheet.js']){var response=await fetch(jsFile+'?v='+version,{cache:'no-cache'});if(!response.ok)throw Error('Learning module unavailable: '+jsFile);var source=await response.text();eval(source);}if(pl&&document.body.dataset.room==='home')home();}catch(error){console.warn('ETM learning update did not finish loading. Refresh once publishing completes.');notice('The new learning update is still loading. Refresh after publishing finishes.');}}})();
+  (function(){var version='20261117-family-play-21.0',config=document.createElement('script');config.src='maths-ai-config.js?v='+version;config.onload=load;config.onerror=load;document.head.appendChild(config);async function load(){try{for(var cssFile of ['maths-coach.css','learning.css']){var cssResponse=await fetch(cssFile+'?v='+version,{cache:'no-cache'});if(!cssResponse.ok)throw Error('Learning styles unavailable');var style=document.createElement('style');style.dataset.etmAsset=cssFile;style.textContent=await cssResponse.text();document.head.appendChild(style);}for(var jsFile of ['maths-coach.js','ai-lab.js','learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','piano-audio.js','family-games.js','atlas.js','learning.js','number-tables.js','piano-study.js','maths-discovery.js','family-sync-core.js','family-sync.js','screen-share.js','connection-health.js','family-reconnect.js','question-controls.js','family-home.js','private-family.js','friend-games.js','friend-room.js','game-invites.js','draw-together.js','equation-sheet.js','practice-sheet.js']){var response=await fetch(jsFile+'?v='+version,{cache:'no-cache'});if(!response.ok)throw Error('Learning module unavailable: '+jsFile);var source=await response.text();eval(source);}if(pl&&document.body.dataset.room==='home')home();}catch(error){console.warn('ETM learning update did not finish loading. Refresh once publishing completes.');notice('The new learning update is still loading. Refresh after publishing finishes.');}}})();
   // Entry always uses profile cards. The saved family link supplies the room.
   $('wp').style.display='none';$('gate').style.display='none';entryScreen(false);
 

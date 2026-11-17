@@ -40,6 +40,7 @@ function learningHome(){
    }
    btn('All activities →',learningAllActivities,a,'primaryButton'); 
  }
+ if(typeof familyActor==='function'&&familyActor())btn(child?'Maths with Dad':'Maths together',()=>window.ETMFriends.together(),a,'primaryButton duoHome');
  var wishes=btn('',function(){santaRoom()},a,'wishShortcut');node('span','✉',wishes,'wishStamp');node('strong','Santa’s List',wishes);node('span','Open my wishes →',wishes,'wishAction');
  if(child){updateCoinBadge();return}
  learningActivityLinks(a);

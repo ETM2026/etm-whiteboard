@@ -29,17 +29,18 @@ window.ETMSheet=(()=>{
     d.oncancel=e=>{e.preventDefault();leave()};d.showModal();
     function editor(){
       body.replaceChildren();footer.replaceChildren();body.className='sheetForm';
-      const select=learningSelect(body,'What shall we practise?', [['table','Times table'],['question','My own question'],['equations','Equation builder']],page?.kind||initial||'table');
+      const select=learningSelect(body,'What shall we practise?', [['table','Times table'],['question','My own question'],['equations','Shared maths paper']],page?.kind||initial||'table');
       const table=learningSelect(body,'Choose a table',Array.from({length:12},(_,i)=>[String(i+1),(i+1)+' times table']),String(page?.step||10));
       const label=node('label','Your question',body),input=node('input',undefined,label);input.maxLength=160;input.value=page?.text||'';input.placeholder='e.g. What is half of 68?';
-      const pad=node('div',undefined,body);window.ETMEquations.keypad(pad,k=>{if(!input.disabled)input.value=k==='⌫'?input.value.slice(0,-1):(input.value+k).slice(0,160)});function toggle(){pad.hidden=select.value!=='equations';label.hidden=select.value==='table';table.parentElement.hidden=select.value!=='table'}
+      function toggle(){label.hidden=select.value!=='question';table.parentElement.hidden=select.value!=='table'}
       select.onchange=toggle;toggle();
       const submit=btn(wire?.open?'Send new sheet':'Invite '+partner,async()=>{
-        const next=select.value==='table'?{kind:'table',step:Number(table.value)}:{kind:select.value,text:input.value.trim()};
+        const next=select.value==='table'?{kind:'table',step:Number(table.value)}:{kind:select.value,text:select.value==='equations'?'Shared maths paper':input.value.trim()};
         if(!validPage(next)){input.focus();return}
+        if(!wire&&next.kind==='equations'){dispose();window.ETMFriends.together(partner);return}
         if(wire?.open){
           if(wire.pending>=40){report('Reconnecting. Try sending the new sheet again in a moment.');return}
-          if((answers.some(Boolean)||working?.lines.some(Boolean))&&!confirm('Start a new sheet and clear the answers on this one?'))return;
+          if((answers.some(Boolean)||working?.cells.some(c=>c[1]))&&!confirm('Start a new sheet and clear the answers on this one?'))return;
           startPage(next);wire.send({t:'sheet',page,version});return;
         }
         const gen=++inviteVersion;
@@ -65,10 +66,10 @@ window.ETMSheet=(()=>{
       const paper=node('section',undefined,body,'sheetPaper');
       node('h3',page.kind==='table'?page.step+' times table':page.text,paper);
       if(page.kind==='equations'){
-        board=window.ETMEquations.mount(node('div',undefined,paper),page.text,teacher,state=>{working=state;workDirty=true;flush()},i=>wire?.send({t:'point',version,i}));
+        board=window.ETMEquations.mount(node('div',undefined,paper),teacher,state=>{working=state;workDirty=true;flush()});
         if(working)board.receive(working);
         if(teacher)btn('Choose next sheet',editor,footer,'quietButton');
-        report(teacher?'Follow the working. Tap Point here to show a step.':'What would you do first? Tap the numbers and symbols.');return;
+        report('You and '+partner+' can both write here.');return;
       }
       answers.forEach((answer,i)=>{
         const line=node('div',undefined,paper,'sheetLine'),text=page.kind==='table'?window.ETMTables.bookRow('times',page.step,i+1).label+' =':'Your answer';
@@ -87,7 +88,7 @@ window.ETMSheet=(()=>{
       report(teacher?'Watch '+partner+' fill in the answers.':'Dad can see the answers as you type.');
     }
     function flush(){
-      if(workDirty&&live()&&!teacher&&wire?.open&&wire.pending<4){wire.send({t:'work',version,state:working});workDirty=false}
+      if(workDirty&&live()&&wire?.open&&wire.pending<4){wire.send({t:'work',version,state:working});workDirty=false}
       if(!live()||teacher||!dirty||!wire?.open||wire.pending>=4)return;
       wire.send({t:'answers',version,values:answers.slice()});dirty=false;
     }
@@ -102,7 +103,7 @@ window.ETMSheet=(()=>{
         if(msg.t==='sheet'&&!teacher&&validPage(msg.page)&&Number.isSafeInteger(msg.version)&&msg.version>version){
           version=msg.version-1;startPage(msg.page);return;
         }
-        if(page?.kind==='equations'&&msg.version===version){if(teacher&&msg.t==='work'&&window.ETMEquations.valid(msg.state)){working=msg.state;board?.receive(working)}if(!teacher&&msg.t==='point')board?.highlight(msg.i);return}
+        if(page?.kind==='equations'&&msg.version===version){if(msg.t==='work'&&window.ETMEquations.valid(msg.state)){board.receive(msg.state);working=board.snapshot()};return}
         if(msg.t==='answers'&&teacher&&msg.version===version&&Array.isArray(msg.values)&&msg.values.length===answers.length&&msg.values.every(v=>typeof v==='string'&&v.length<=100)){
           answers=msg.values.slice();fields.forEach((el,i)=>{el.textContent=answers[i]||'—'});return;
         }
@@ -115,14 +116,14 @@ window.ETMSheet=(()=>{
       if(!wire?.open)return;
       flush();pulse();const lost=Date.now()-clock>12000;
       if(lost)report('Reconnecting to '+partner+'…');
-      else if(wasDisconnected)report(teacher?'Connected · following '+partner+'’s answers.':'Connected · Dad can see your answers.');
+      else if(wasDisconnected)report(page?.kind==='equations'?'You and '+partner+' can both write here.':teacher?'Connected · following '+partner+'’s answers.':'Connected · Dad can see your answers.');
       wasDisconnected=lost;
     },250);
     if(teacher)editor();else report('Opening Dad’s sheet…');
     return active={dialog:d,attach,dispose,live,report};
   }
   return {
-    setup(name,initial){if(active){active.dialog.focus();return}if(familyActor()&&dadUnlocked()&&FAMILY.includes(name))room(name,true,initial)},
+    setup(name,initial){if(initial==='equations'&&dadUnlocked()&&FAMILY.includes(name)){window.ETMFriends.together(name);return}if(active){active.dialog.focus();return}if(familyActor()&&dadUnlocked()&&FAMILY.includes(name))room(name,true,initial)},
     describe(){return !active&&familyActor()&&accessSession.role==='child'?{title:'Practise with Dad',yes:'Join practice'}:null},
     async joinVisit(_,who,id){
       if(active||!familyActor()||accessSession.role!=='child'||who.name!=='Dad')return;

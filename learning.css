@@ -127,3 +127,25 @@ button.wishShortcut{display:flex;align-items:center;gap:12px;width:100%;margin:1
 .beatTrail{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin:.5rem 0 1rem}.beatTrail i{height:8px;background:#dce9e4;border-radius:10px}.beatTrail i.filled{background:#297969}.scienceBrief{padding:.85rem 1rem;background:#edf6f2;border-radius:1rem}.scienceBrief h2{font-size:clamp(1.12rem,2.4vw,1.55rem);line-height:1.45;max-width:42em;margin:.45rem 0}.scienceWhy{margin-top:.8rem}
 
 .eqKeys{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;max-width:23rem;margin:.5rem auto}.eqKeys button{min-height:44px;font-size:1.2rem}.eqStep{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;padding:.5rem .75rem;border-bottom:1px solid #cfdfda}.eqStep strong{font:600 1.25rem monospace}.eqStep small{color:#395b64}.eqPoint{background:#fff2ba;border-left:4px solid #a36b12}.eqColumns{margin-left:auto;padding:.3rem .65rem;background:#f0f7f5;text-align:right;font:1.3rem/1.4 monospace;letter-spacing:.2em}.eqColumns strong{display:block;border-top:2px solid}.eqResult{font-size:1.35rem;color:#146954}
+
+/* Joint squared maths paper */
+.paperTools,.paperTiles{display:flex;flex-wrap:wrap;gap:.4rem;margin:.65rem 0}
+.paperTiles[hidden],.paperTools[hidden],.paperTools button[hidden]{display:none}
+.paperTip{margin:.4rem 0;font-size:1rem}
+.paperScroll{overflow-x:auto;border:1px solid #a8c6ca;border-radius:10px;background:white}
+.mathPaperGrid{display:grid;grid-template-columns:repeat(12,minmax(34px,1fr));min-width:408px}
+.mathPaperGrid .paperSquare{width:100%;height:42px;min-width:0;min-height:0;margin:0;border:0;border-right:1px solid #c9dee1;border-bottom:1px solid #c9dee1;border-radius:0;background:white;color:#193d50;font:bold 1.25rem system-ui;padding:0;box-shadow:none}
+.mathPaperGrid .chosen,.mathPaperGrid .dropHere{background:#ddf4ec;box-shadow:inset 0 0 0 2px #247d74}
+.paperTiles .mathTile{touch-action:none;user-select:none;min-width:44px;min-height:44px;border:1px solid #90b6af;border-radius:9px;background:#edf7f2;color:#174b48;font-size:1.25rem}
+.mathPaperGrid.reading{min-width:0;grid-template-columns:repeat(12,minmax(0,1fr))}
+.mathPaperGrid.reading .paperSquare{opacity:1;color:#193d50;cursor:default}
+
+.duoHome{display:block;margin:12px 0;min-height:46px}
+.mathPaperGrid .duoPoint{outline:3px dashed #9c490d;outline-offset:-5px;background:#fff1ca}
+.friendCard .paperTiles,.friendCard .paperTools{justify-content:flex-start}
+@media(prefers-reduced-motion:no-preference){
+ .winCoin{animation:etmWin .65s ease-out both}
+ @keyframes etmWin{50%{transform:scale(1.1);box-shadow:0 0 0 3px #fff4bb}}
+}
+.pictureGrid .pictureFound:disabled{background:#def3df;opacity:1;outline:3px solid #387c5d}
+@media(prefers-reduced-motion:no-preference){.pictureFound{animation:foundPicture .55s ease}@keyframes foundPicture{45%{transform:translateY(-6px) rotate(-4deg)}}}

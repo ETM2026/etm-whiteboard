@@ -188,8 +188,23 @@ function regionalMap(kind,parent,quiz){
    svgEl('circle',{cx:x,cy:y,r:5,class:'regionDot'},g);
    const label=svgEl('text',{x:x+dx,y:y+dy,'text-anchor':dx<0?'end':'start',class:'atlasLabel'},g);label.textContent=name;
    function choose(){if(quiz){quiz.answer(name);return}if(riverChoice){riverChoice(name);return}river.replaceChildren();highlight(name);caption.show(name,detail);
-     if(name==='Athlone')riverTrip();else{const [prompt,right,other,hint]=predictions[name];atlasPrediction(caption,'Try a map challenge',prompt,[right,other],right,hint,'You’ve got it. Tap another pin to explore.')}}
-   g.onclick=choose;
+     if(name==='Athlone')riverTrip();else if(name==='Perth'){
+       const boat=svgEl('g',{},river);
+       svgEl('path',{d:'M-9 1H9L5 6H-5Z',fill:'#a75033',stroke:'white'},boat);
+       svgEl('path',{d:'M0 -12V0H8Z',fill:'#fff6db',stroke:'#755943'},boat);
+       boat.style.transform='translate('+x+'px,'+y+'px)';
+       boat.style.transition=window.matchMedia('(prefers-reduced-motion: reduce)').matches?'none':'transform .6s ease';
+       caption.fact.textContent='Your boat is at Perth. Which way takes you out to sea?';
+       let returning=false;const msg=node('p','',caption.challenge);msg.setAttribute('role','status');
+       const controls=node('div',undefined,caption.challenge,'mapTools');
+       for(const dir of ['← West','East →'])btn(dir,()=>{
+         if((dir==='← West')===returning){msg.textContent=returning?'That takes you farther out. Where is the coast?':'That way leads inland. Look for open water.';return}
+         boat.style.transform='translate('+(returning?x:x-55)+'px,'+y+'px)';
+         if(returning){msg.textContent='Back in Perth! Pick another pin to explore.';controls.remove()}
+         else{msg.textContent='You sailed west into the Indian Ocean. Now sail home to Perth.';returning=true}
+       },controls,'lPill');
+     }else{const [prompt,right,other,hint]=predictions[name];atlasPrediction(caption,'Try a map challenge',prompt,[right,other],right,hint,'You’ve got it. Tap another pin to explore.')}}
+   g.onclick=e=>{e?.stopPropagation();choose()};
    if(tabs){const b=btn(name,choose,tabs,'lPill');b.setAttribute('aria-pressed','false');buttons.set(name,b)}
  }
  for(const [name,lon,lat] of stops){
@@ -197,6 +212,14 @@ function regionalMap(kind,parent,quiz){
    const top=svgEl('circle',{cx:240+(lon-cx)*sx,cy:160-(lat-cy)*sy,r:7,fill:'transparent','pointer-events':'all'},svg);
    top.onclick=pins.get(name).onclick;
  }
+ if(!quiz)svg.onclick=e=>{
+   const matrix=svg.getScreenCTM();if(!matrix)return;
+   const pt=new DOMPoint(e.clientX,e.clientY).matrixTransform(matrix.inverse());
+   const nearest=[...pins.entries()].sort((a,b)=>distance(a)-distance(b))[0];
+   function distance(entry){const c=entry[1].querySelector('circle');return Math.hypot(pt.x-c.cx.baseVal.value,pt.y-c.cy.baseVal.value)}
+   if(nearest){const dot=svgEl('circle',{cx:pt.x,cy:pt.y,r:9,fill:'none',stroke:'#257567','pointer-events':'none'},svg);
+     setTimeout(()=>dot.remove(),450);if(!riverChoice){caption.show('Look for a pin','Try the marked place: '+nearest[0]+'.');highlight(nearest[0])}}
+ };
  return highlight;
 }
 

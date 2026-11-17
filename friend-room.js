@@ -18,13 +18,19 @@
   function link(r){return new URL(location.pathname,location.origin).href+'#play='+r.token+'.'+r.game+(r.game==='rally'?'.'+r.op:'')}
   function leave(){
     const r=room;room=null;if(r){window.ETMGameInvites?.forget(r.directId);window.ETMGameInvites?.close('welcome:'+r.token)}
-    if(r){clearTimeout(r.timeout);clearInterval(r.clock);clearInterval(r.gameClock);clearInterval(r.contactTimer);try{r.conn?.close()}catch{}try{r.peer?.destroy()}catch{}}
+    if(r){clearTimeout(r.timeout);clearInterval(r.clock);clearInterval(r.gameClock);clearInterval(r.paperTimer);clearInterval(r.contactTimer);try{r.conn?.close()}catch{}try{r.peer?.destroy()}catch{}}
     header?.remove();header=null;panel=null;thread=null;messageBox=null;form=null;
   }
   function end(r,why){
     if(!active(r))return;
     const visible=panel?.isConnected;
-    leave();if(visible)lobby(why);else notice(why);
+    leave();if(visible&&r.duo&&r.partner){
+      panel=learningPage('Maths together','friends',home);
+      node('h2','Session ended',panel);node('p',why,panel);
+      if(!r.saveWarned)node('p','Your working is in the child’s learning profile. Reopen Maths together to continue.',panel);
+      btn('Invite '+r.partner+' again',()=>window.ETMFriends.together(r.partner),panel,'primaryButton');
+      btn('Home',home,panel,'quietButton');
+    }else if(visible)lobby(why);else notice(why);
   }
   function send(r,data){
     if(!active(r)||!r.conn?.open)return false;
@@ -76,7 +82,7 @@
       r.match=FriendGames.create(r.game,[r.name,r.partner],r.round,r.prefs);
       publishGame(r);
     }
-    clearInterval(r.gameClock);
+    clearInterval(r.gameClock);clearInterval(r.paperTimer);
     if(FriendGames.isRace(r.game))r.gameClock=setInterval(()=>{
       if(!active(r))return;
       if(r.host&&r.match?.until&&!r.match.done&&Date.now()>=r.match.until){
@@ -142,6 +148,24 @@
       const track=node('progress',undefined,line);track.max=5;track.value=scores[who];track.setAttribute('aria-label',who===seat?'Your points':'Friend’s points');
     }
     const last=r.answers[i-1];if(last)node('p',(last.correct?'✓ ':'Last fact · ')+last.label,card);
+    if(done){
+      const missed=r.answers.flatMap((a,j)=>a.seat===seat&&!a.correct?[j]:[]);
+      if(missed.length){
+        const retry=node('div',undefined,card);
+        btn('Practise my missed sums',()=>{
+          let index=0;
+          function show(){
+            retry.replaceChildren();
+            if(index===missed.length){node('strong','You solved each of those sums.',retry);return}
+            const fact=rallyFact(r,missed[index]);
+            node('h3',fact.label+' = ?',retry);const note=node('p','',retry);
+            for(const n of window.ETMTables.options(fact))btn(String(n),()=>{
+              if(n!==fact.answer){note.textContent='Take your time. Try again.';return}index++;show();
+            },retry,'lPill');
+          }show();
+        },retry,'lPill');
+      }
+    }
     if(!done){
       node('small','Round '+(Math.floor(i/2)+1)+' of 5',card);
       if(myTurn){const q=rallyFact(r,i);node('h2',q.label+' = ?',card);
@@ -154,14 +178,14 @@
   function updateHeader(r){
     if(!active(r))return;
     if(!header)header=btn('',()=>draw(r),appHeader,'quietButton friendBadge');
-    header.textContent=r.candidate?'🏁 Join request':r.unread?'Friend • '+r.unread:'Friend room';
-    header.setAttribute('aria-label',r.candidate?'Open join request from '+r.candidate:r.unread?r.unread+' unread friend messages':'Return to friend room');
+    header.textContent=r.duo&&r.partner?'Back to '+r.partner:r.candidate?'🏁 Join request':r.unread?'Friend • '+r.unread:'Friend room';
+    header.setAttribute('aria-label',r.candidate?'Open join request from '+r.candidate:r.unread?r.unread+' unread friend messages':r.duo&&r.partner?'Back to '+r.partner:'Return to friend room');
   }
   function inviteReady(r){return r.host&&r.ready&&!r.partner&&!r.candidate}
-  async function start(token,host,other,inviteId){
+  async function start(token,host,other,inviteId,duo=false,inviteName=''){
     if(!actor()||!/^[a-f0-9]{48}$/.test(token))return;
     leave();
-    const r=room={actor:actor(),host,token,name:display(),partner:'',candidate:'',ready:false,game:host?chosenGame:inviteGame||'three',op:operation,steps:[myStep,myStep],prefs:[FriendGames.settings(choice),FriendGames.settings(choice)],answers:[],offer:'',chat:false,board:Array(host&&chosenGame==='four'?42:9).fill(''),round:1,unread:0,messages:[],recent:[],last:Date.now(),muted:false,status:'Connecting…'};
+    const r=room={duo,inviteName,paperOpen:duo,actor:actor(),host,token,name:display(),partner:'',candidate:'',ready:false,game:host?chosenGame:inviteGame||'three',op:operation,steps:[myStep,myStep],prefs:[FriendGames.settings(choice),FriendGames.settings(choice)],answers:[],offer:'',chat:false,board:Array(host&&chosenGame==='four'?42:9).fill(''),round:1,unread:0,messages:[],recent:[],last:Date.now(),muted:false,status:'Connecting…'};
     draw(r);updateHeader(r);
     try{
       const [id,hostProof,guestProof]=await Promise.all(['room','host','guest'].map(k=>stamp(token,k)));
@@ -177,7 +201,7 @@
       };
       if(other){await r.familyConnect(inviteId,other);return}
       if(named){r.named=true;r.status='Choose someone to invite';refresh(r)}
-      if(named&&typeof Peer==='undefined')return;
+      if(duo||named&&typeof Peer==='undefined')return;
       const p=r.peer=host?new Peer(address):new Peer();
       if(!named)deadline(r,'Couldn’t reach your friend. Check both devices are online, then join again.',30000);
       p.on('open',()=>{
@@ -208,12 +232,23 @@
           }
           if(!host&&!r.partner&&m.type==='welcome'&&clean(m.name,24)){
             if(!Object.hasOwn(titles,m.game)||(m.game==='rally'&&(!validOp(m.op)||!validStep(m.step)))){end(r,'This game needs a newer version of ETM.');return}
-            clearTimeout(r.timeout);r.chat=m.chat===true&&chatAllowed()&&(actor().role!=='guest'||m.guest===false);r.op=m.op;r.steps=[m.step,myStep];r.game=m.game;r.board=Array(r.game==='four'?42:9).fill('');r.partner=clean(m.name,24);r.status='Connected';if(extended(r.game))startGame(r);beginClock(r);refresh(r);return;
+            clearTimeout(r.timeout);r.chat=m.chat===true&&chatAllowed()&&(actor().role!=='guest'||m.guest===false);r.op=m.op;r.steps=[m.step,myStep];r.game=m.game;r.board=Array(r.game==='four'?42:9).fill('');r.partner=clean(c.family?c.remoteName:m.name,24);r.status='Connected';if(extended(r.game))startGame(r);beginClock(r);refresh(r);updateHeader(r);return;
           }
           if(!r.partner&&m.type==='decline'){end(r,'Your friend closed this invitation. You can invite someone to a new game.');return}
           if(!r.partner)return;
-          r.last=Date.now();
-          if(m.type==='ping')return;
+          r.last=Date.now();if(r.waiting){r.waiting=false;if(r.connectionNote)r.connectionNote.hidden=true}
+          if(m.type==='goodbye'){end(r,r.partner+' left the game.');return}if(m.type==='ping')return;
+          if(r.duo&&c.family){
+            if(m.type==='paper-point'){ensurePaper(r);r.paperBoard.highlight(m.i);return}
+            if(m.type==='paper'&&window.ETMEquations.valid(m.state)){
+              ensurePaper(r);r.paperBoard.receive(m.state);savePaper(r);return;
+            }
+            if(m.type==='switch-view'&&typeof m.paper==='boolean'){
+              if(host)send(r,{type:'session-view',paper:m.paper});
+              if(host){r.paperOpen=m.paper;refresh(r)}return;
+            }
+            if(!host&&m.type==='session-view'&&typeof m.paper==='boolean'){r.paperOpen=m.paper;refresh(r);return}
+          }
           if(m.type==='chat'){
             const t=clean(m.text,220);if(!t||!canChat(r)||r.muted)return;
             r.recent=r.recent.filter(x=>Date.now()-x<6000);if(r.recent.length>=5)return;
@@ -242,11 +277,40 @@
       }
     }catch{end(r,'This device couldn’t open a friend room. Check the connection and try again.')}
   }
+  function savePaper(r){
+    if(!active(r)||!r.paperBoard)return;
+    try{
+      const profile=ETM_CORE.profile(learningState,r.paperOwner);
+      const merged=ETM_CORE.mergePaper(profile.familyPaper,r.paperBoard.snapshot());
+      if(JSON.stringify(profile.familyPaper)===JSON.stringify(merged)&&!r.saveWarned)return;
+      profile.familyPaper=merged;
+      if(!learningStore())throw Error('Storage full');
+      r.saveWarned=false;
+    }
+    catch{if(!r.saveWarned){r.saveWarned=true;notice('Your paper is live. This device could not keep a copy.')}}
+  }
+  function ensurePaper(r){
+    if(r.paperBoard||!r.conn?.family||!r.partner)return;
+    r.paperOwner=r.actor.role==='dad'?r.partner:r.actor.name;
+    r.paperElement=document.createElement('section');
+    node('h3','Our maths paper',r.paperElement);
+    r.paperBoard=window.ETMEquations.mount(r.paperElement,r.actor.role==='dad',()=>{
+      savePaper(r);r.paperDirty=true;flushPaper();
+    },i=>send(r,{type:'paper-point',i}));
+    try{const saved=learningState.profiles[r.paperOwner]?.familyPaper;if(window.ETMEquations.valid(saved))r.paperBoard.receive(saved)}catch{}
+    function flushPaper(){
+      if(active(r)&&r.paperDirty&&r.conn.open&&r.conn.pending<4){
+        r.paperDirty=false;send(r,{type:'paper',state:r.paperBoard.snapshot()});
+      }
+    }
+    r.paperDirty=true;flushPaper();r.paperTimer=setInterval(flushPaper,250);
+  }
   function beginClock(r){r.last=Date.now();r.clock=setInterval(()=>{
     if(!active(r)){leave();return}
     if(Date.now()-r.last>90000){end(r,'The friend connection ended. Send a fresh invitation to play again.');return}
     if(r.chat&&!chatAllowed()){r.chat=false;send(r,{type:'game-only'});refresh(r)}
-    send(r,{type:'ping'});
+    if(r.duo&&Date.now()-r.last>22000){r.waiting=true;if(r.connectionNote){r.connectionNote.hidden=false;r.connectionNote.textContent='Trying to reconnect to '+r.partner+'…'}}
+    if(!r.conn?.family||r.conn.pending<5)send(r,{type:'ping'});
   },15000)}
   function result(b){
     const cols=b.length===42?7:3,need=cols===7?4:3;
@@ -281,15 +345,17 @@
     const buttons=node('div',undefined,section,'inviteNames'),status=node('p',r.inviteStatus||'',section);
     status.setAttribute('role','status');let last=null;
     function paint(){
-      const names=invites.names(),key=JSON.stringify(names);if(key===last)return;last=key;buttons.replaceChildren();
-      if(!names.length)node('p','Waiting for family to come online. You can also share the link below.',buttons);
-      for(const name of names)btn('Invite '+name,async()=>{
+      const names=invites.names().filter(n=>!r.duo||(r.actor.role==='dad'?FAMILY.includes(n):n==='Dad')),key=JSON.stringify(names);if(key===last)return;last=key;buttons.replaceChildren();
+      if(!names.length)node('p',r.duo?'Open ETM on the other device and choose your family profile. Their name will appear here.':'Waiting for family to come online. You can also share the link below.',buttons);
+      async function invitePerson(name){
         if(r.sending)return;r.sending=true;invites.forget(r.directId);
-        const id=await invites.invite(name,link(r).split('#play=')[1],msg=>{
+        const id=await invites.invite(name,r.duo?r.token+'.duo':link(r).split('#play=')[1],msg=>{
           r.inviteStatus=msg;if(active(r)&&r.inviteLabel?.isConnected)r.inviteLabel.textContent=msg;
         },(id,person)=>r.familyConnect(id,person));
         r.sending=false;if(!active(r)||r.partner)invites.forget(id);else r.directId=id;
-      },buttons,'primaryButton');
+      }
+      for(const name of names)btn('Invite '+name,()=>invitePerson(name),buttons,'primaryButton');
+      if(r.inviteName&&names.includes(r.inviteName)){const name=r.inviteName;r.inviteName='';invitePerson(name)}
     }
     r.inviteLabel=status;paint();
     clearInterval(r.contactTimer);r.contactTimer=setInterval(()=>{if(!active(r)||!section.isConnected){clearInterval(r.contactTimer);return}paint()},1000);
@@ -297,9 +363,10 @@
   function draw(r){
     if(!active(r))return;
     const draft=panel?.isConnected&&messageBox?messageBox.value:'',wasTyping=messageBox&&document.activeElement===messageBox;
-    panel=learningPage('Play with a friend','friends',learningPlayTogether);thread=null;messageBox=null;
+    panel=learningPage(r.duo?'Maths together':'Play with a friend','friends',r.duo?home:learningPlayTogether);thread=null;messageBox=null;
     const card=node('div',undefined,panel,'friendCard');
     node('h2',r.partner?'You and '+r.partner:r.status,card);
+    if(r.duo&&r.partner){r.connectionNote=node('p',r.waiting?'Trying to reconnect to '+r.partner+'…':'',card);r.connectionNote.setAttribute('role','status');r.connectionNote.hidden=!r.waiting}
     if(r.named&&!r.partner&&!r.candidate)directOptions(r,card);
     if(inviteReady(r)){
       node('p','Playing with a guest? Send them this private link and keep ETM open.',card);
@@ -314,7 +381,16 @@
       btn('Decline invitation',()=>{send(r,{type:'decline'});end(r,'Invitation closed.')},card,'quietButton');
     }
     if(r.partner){
-      if(extended(r.game)){const seq=r.gameView?.seq;friendGameBoard(r,card,a=>action(r,a,0,seq),()=>refresh(r))}else if(r.game==='rally')drawRally(r,card);else{
+      if(r.duo){
+        ensurePaper(r);
+        btn(r.paperOpen?'Play a number rally':'Back to our paper',()=>{
+          const paper=!r.paperOpen;
+          if(!send(r,{type:r.host?'session-view':'switch-view',paper}))return;
+          if(r.host){r.paperOpen=paper;refresh(r)}
+        },card,'lPill');
+      }
+      if(r.duo&&r.paperOpen){card.appendChild(r.paperElement)}
+      else if(extended(r.game)){const seq=r.gameView?.seq;friendGameBoard(r,card,a=>action(r,a,0,seq),()=>refresh(r))}else if(r.game==='rally')drawRally(r,card);else{
       const mark=r.host?'X':'O',winner=result(r.board),myTurn=turn(r)===mark;
       const counter=m=>r.game==='four'?(m==='X'?'red ●':'gold ◆'):m;
       const status=winner==='draw'?'A draw!':winner?(winner===mark?'You won!':r.partner+' won!'):myTurn?'Your turn · '+counter(mark):r.partner+'’s turn · '+counter(turn(r));
@@ -337,7 +413,7 @@
         }
       }else r.board.forEach((v,i)=>{const b=btn(v,()=>move(r,i,mark,true),board,'friendCell');b.disabled=!!v||!!winner||!myTurn;b.dataset.mark=v;b.setAttribute('aria-label','Row '+(Math.floor(i/3)+1)+', column '+(i%3+1)+', '+(v||'empty'))});
       }
-      if(finished(r)){
+      if(!r.paperOpen&&finished(r)){
         if(r.offer==='out')node('p','Rematch requested. Waiting for '+r.partner+'.',card);
         else btn(r.offer==='in'?'Accept rematch':'Play again',()=>requestAgain(r),card,'primaryButton');
         if(r.offer==='in')btn('Finish here',()=>{send(r,{type:'decline-rematch',round:r.round});r.offer='';end(r,'You finished the game.')},card,'quietButton');
@@ -357,7 +433,7 @@
       btn(r.muted?'Turn chat on':'Mute chat',()=>{r.muted=!r.muted;draw(r)},chat,'quietButton');
     }
     }
-    if(!r.candidate)btn(r.partner?'Leave game':'Cancel',()=>end(r,'You left the room.'),card,'quietButton');
+    if(!r.candidate)btn(r.partner?'Leave game':'Cancel',()=>{if(r.partner)send(r,{type:'goodbye'});end(r,'You left the room.')},card,'quietButton');
   }
   function arrive(){
     if(!actor()||invitationShown)return;
@@ -367,13 +443,16 @@
     invitationShown=true;pendingInvite=match[1];inviteGame=match[2]||'';if(validOp(match[3]))operation=match[3];lobby();
   }
   function describe(visit){
+    if(/^[a-f0-9]{48}\.duo$/.test(visit)&&familyActor())return {token:visit.split('.')[0],game:'rally',duo:true,title:'Maths together',yes:'Join maths'};
     const m=/^([a-f0-9]{48})[.]([a-z]{2,9})(?:[.](add|sub|times))?$/.exec(visit);
     if(!m||!Object.hasOwn(titles,m[2]))return null;
     const game=m[2];return {token:m[1],game,op:m[3],title:titles[game],yes:game==='quiz'?'Join quiz':['tables','rally'].includes(game)?'Join rally':'Join game',
       options:parent=>{if(game==='rally')tablePicker(parent,false);gameOptions(game,parent)}};
   }
-  window.ETMFriends={open:lobby,leave,arrive,describe,joinVisit(visit,other,id){
-    const info=describe(visit);if(!info||!actor())return;inviteGame=info.game;pendingInvite='';if(validOp(info.op))operation=info.op;start(info.token,false,other,id);
+  window.ETMFriends={refreshPaper(name,paper){
+    if(room&&active(room)&&room.paperOwner===name&&room.paperBoard)room.paperBoard.receive(paper);
+  },together(inviteName=''){if(!familyActor())return;if(room&&active(room)){draw(room);return}chosenGame='rally';operation='add';myStep=2;start(hex(crypto.getRandomValues(new Uint8Array(24))),true,null,null,true,inviteName)},open:lobby,leave,arrive,describe,joinVisit(visit,other,id){
+    const info=describe(visit);if(!info||!actor())return;inviteGame=info.game;pendingInvite='';if(validOp(info.op))operation=info.op;if(info.duo&&!(actor().role==='dad'?FAMILY.includes(other.name):other.name==='Dad'))return;start(info.token,false,other,id,!!info.duo);
   },choose(id){if(Object.hasOwn(titles,id))chosenGame=id;lobby()},rally(op,step){chosenGame='rally';operation=validOp(op)?op:'add';myStep=validStep(step)?step:2;lobby()}};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&room&&active(room)&&room.unread&&panel?.isConnected&&thread?.isConnected){paintChat(room);room.unread=0;updateHeader(room)}});
   window.addEventListener('pagehide',leave);
