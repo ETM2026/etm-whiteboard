@@ -30,6 +30,7 @@ window.ETMEquations = (() => {
     const actions=node('div',undefined,parent,'paperTools');
     function choose(i){selected=i;paint()}
     function write(index,value,remember=true){
+      if(carrying&&remember&&/^[0-9]$/.test(value)){value='⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(value)];carrying=false;carry.textContent='Carry digit';carry.setAttribute('aria-pressed','false')}
       const old=cells.get(index);
       if((old?.[1]||'')!==value){
         const entry=[index,value,++clock,teacher?1:0];cells.set(index,entry);
@@ -39,7 +40,7 @@ window.ETMEquations = (() => {
       selected=value?Math.min(index+1,rows*width-1):index;paint();
     }
     function nextLine(){
-      const target=(Math.floor(selected/width)+1)*width;
+      const target=(Math.floor(selected/width)+1)*width+(guide?2:0);
       if(target>=maxLines*width)return;
       if(target>=rows*width){rows++;send(snapshot())}
       choose(target);squares[target].focus();
@@ -68,7 +69,18 @@ window.ETMEquations = (() => {
       };
       tile.onpointercancel=()=>{start=null;grid.querySelector('.dropHere')?.classList.remove('dropHere')};
     }
+    let carrying=false;
+    const carry=btn('Carry digit',()=>{carrying=!carrying;carry.textContent=carrying?'Choose a carry digit':'Carry digit';carry.setAttribute('aria-pressed',String(carrying))},actions,'lPill');
+    btn('Answer line',()=>{
+      const start=guide?Math.floor(selected/width)*width+1:Math.min(selected,Math.floor(selected/width)*width+width-3);
+      for(let i=start;i<start+3;i++)write(i,'━');
+    },actions,'lPill');
     btn('Erase square',()=>write(selected,''),actions,'lPill');
+    const columns=btn('Tens and units',()=>{
+      const line=Math.floor(selected/width);
+      selected=line*width+2;guide=!guide;columns.setAttribute('aria-pressed',String(guide));paint();
+    },actions,'lPill');
+    let guide=false;
     const next=btn('Next line ↓',nextLine,actions,'lPill');
     function paint(){
       while(squares.length<rows*width){
@@ -97,6 +109,7 @@ window.ETMEquations = (() => {
       squares.forEach((b,i)=>{
         const value=cells.get(i)?.[1]||'';b.textContent=value;
         b.setAttribute('aria-label','Line '+(1+Math.floor(i/width))+', square '+(1+i%width)+(value?', '+value:', blank'));
+        b.dataset.place=guide&&i%width===2?'Tens':guide&&i%width===3?'Units':'';
         b.disabled=reading;b.tabIndex=i===selected&&!reading?0:-1;b.classList.toggle('chosen',i===selected&&!reading);
       });
     }
@@ -109,7 +122,11 @@ window.ETMEquations = (() => {
       }
       paint();
     }
-    paint();return {receive,snapshot,highlight};
+    function clearPage(){
+      for(const [i,c] of cells)if(c[1])cells.set(i,[i,'',++clock,teacher?1:0]);
+      history.length=0;selected=0;reading=false;paint();send(snapshot());
+    }
+    paint();return {receive,snapshot,highlight,clearPage};
   }
   return {mount,valid};
 })();

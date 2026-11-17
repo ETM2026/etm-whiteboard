@@ -14,7 +14,7 @@ function learningStore(){
 function learningName(){return childName()}
 function learningProfile(){if(pl&&pl.guest){if(!learningGuest)learningGuest={level:0,events:[]};return learningGuest}return ETM_CORE.profile(learningState,learningName())}
 function learningSpeak(text){if(window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined'){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.rate=.86;window.speechSynthesis.speak(u)}else notice('Read-aloud is not available on this device.')}
-function learningPage(title,key,back){if(typeof tutorRefreshIdentity==='function')tutorRefreshIdentity();stopCoach();if(window.speechSynthesis)window.speechSynthesis.cancel();setRoom(key||'learn',title,back||home);var a=shell(title,'');a.classList.add('learningV2');return a}
+function learningPage(title,key,back){if(typeof tutorRefreshIdentity==='function')tutorRefreshIdentity();stopCoach();if(window.speechSynthesis)window.speechSynthesis.cancel();setRoom(key||'learn',title,back||home);var a=shell(title,'');a.classList.add('learningV2');if(typeof pl!=='undefined'&&pl&&!pl.guest)window.etmMotif?.(club.querySelector('.pageHeading h1'),pl.n);return a}
 function learningCard(parent,icon,title,copy,fn,tint){var b=btn('',fn,parent,'lCard '+(tint||''));node('span',icon,b,'lCardIcon');var c=node('span',undefined,b,'lCardCopy');node('strong',title,c);node('small',copy,c);node('span','↗',b,'lCardArrow');return b}
 function learningSelect(a,label,options,value){var l=node('label',undefined,a,'lField');node('span',label,l);var select=node('select',undefined,l);options.forEach(function(x){var o=node('option',x[1],select);o.value=x[0]});select.value=String(value===undefined?options[0][0]:value);return select}
 function learningHome(){
@@ -22,7 +22,7 @@ function learningHome(){
  var heading=club.querySelector('.pageHeading h1');if(heading)heading.textContent='Hello, '+(pl&&pl.guest?name.replace(/^Guest · /,''):name)+'.';
  const child=!(pl&&pl.guest)&&['Emily','Tommy','Matthew'].includes(name);
  if(child){
-   const prompt=node('div',undefined,a,'playHeading');
+   window.etmMotif?.(heading,name);const prompt=node('div',undefined,a,'playHeading');
    node('h2','What shall we play?',prompt);
    const recent=name==='Emily'?(pieceStore()[name]||[]).filter(p=>p.lastPlayed).sort((x,y)=>y.lastPlayed-x.lastPlayed)[0]:null;
    const pairs=()=>launch('memory',{});
@@ -162,6 +162,7 @@ function learningMath(){
  learningCard(grid,'±','Number tables','Addition, subtraction and times tables',ttHome,'mint');
  learningCard(grid,'🔎','Homework helper','Method hints and separate practice',learningHomework,'blue');
  if(dadUnlocked())learningCard(grid,'🤝','Practise with Dad','Choose a child and send a shared question',teacherMaths,'lilac');
+ if(!pl.guest&&(dadUnlocked()?FAMILY:[learningName()]).some(n=>Object.keys(learningState.profiles[n]?.copybook||{}).length))btn('Kept maths pages',()=>window.ETMFriends.copybook(),a,'lPill');
  btn('My progress',learningProgress,a,'quietButton');
 }
 function learningPracticeSetup(){

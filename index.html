@@ -215,7 +215,16 @@ body[data-room=tables] #clubhouse{background:#f5f8fc}body[data-room=tables] .clu
 .familySnapshot,.etmFamilyPhoto,.etmHolidayPhoto{height:auto!important;aspect-ratio:1/1!important;object-fit:contain!important;object-position:center!important;max-width:100%;max-height:340px;background:#fff7e8;border-radius:18px}
 @media(max-width:550px){.entryFamilyPhoto{height:150px!important}.familySnapshot,.etmFamilyPhoto{max-height:240px}}
 </style>
-</head>
+<style>
+[data-motif]::before{content:"";display:inline-block;width:1.36em;height:1.36em;vertical-align:-.26em;margin-right:.32em;border-radius:50%;background:#f4f5ec url('assets/etm-rooms.svg') no-repeat;background-size:auto 100%}
+[data-motif=Emily]::before{background-position:8% center}[data-motif=Tommy]::before{background-position:49% center}[data-motif=Matthew]::before{background-position:91% center}
+button[data-cue]{min-height:44px}button[data-cue=retry]::before{content:'↻ ';}button[data-cue=hear]::before{content:'♪ ';}button[data-cue=together]::before{content:'↔ ';}
+.copybookTools,.itemSaveRow{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin:.6rem 0}.itemSaveRow{justify-content:space-between;border-bottom:1px solid #dce6e1;padding:.5rem}.copybookTools input{font:inherit;min-height:44px}
+#etmHeader .inviteBadge:not([hidden]){position:fixed;top:calc(100% + 4px);right:8px;max-width:92vw;background:#184e46;color:white;min-height:46px;box-shadow:0 4px 14px #132d3033;z-index:25}
+.paperSquare[data-place=Tens],.paperSquare[data-place=Units]{background-color:#eff8f5;position:relative}
+.paperSquare[data-place=Tens]:nth-child(3)::before,.paperSquare[data-place=Units]:nth-child(4)::before{position:absolute;top:0;left:0;width:100%;font-size:9px;line-height:1.1;color:#35574e;content:attr(data-place)}
+.mathPaperGrid .paperSquare{min-width:0}
+</style></head>
 <body>
 <div id="gate"><div class="card">
   <img class="etmGatePhoto" src="" alt="The ETM adventure team">
@@ -1031,7 +1040,8 @@ body[data-room=tables] #clubhouse{background:#f5f8fc}body[data-room=tables] .clu
   try{Object.assign(learned,JSON.parse(localStorage.getItem('etmLearning')||'{}'))}catch(e){}
   function keepLearning(){return storagePut('etmLearning',JSON.stringify(learned))}
   function node(tag,text,parent,cls){var e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;if(parent)parent.appendChild(e);return e}
-  function btn(text,fn,parent,cls){var b=node('button',text,parent,cls||'kidButton');b.onclick=fn;return b}
+  window.etmMotif=function(el,name){if(el&&['Emily','Tommy','Matthew'].includes(name))el.dataset.motif=name};
+  function btn(text,fn,parent,cls){var b=node('button',text,parent,cls||'kidButton');b.onclick=fn;var cue=/^(← )?Back\b/i.test(text)?'back':/^Hear\b/i.test(text)?'hear':/^Try again$/i.test(text)?'retry':/^Play together$/i.test(text)?'together':'';if(cue)b.dataset.cue=cue;return b}
   function say(text){if(!window.speechSynthesis){feedback(text);return}window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='en-GB';u.rate=.82;window.speechSynthesis.speak(u)}
   function stopActivity(){readingAccepted=null;activityTimers.forEach(clearTimeout);activityTimers=[];if(readingRecognition){readingRecognition.abort();readingRecognition=null}if(window.speechSynthesis)window.speechSynthesis.cancel();if(recorder&&recorder.state==='recording')recorder.stop()}
   function feedback(text,good){var el=$('clubFeedback');if(el){el.textContent=text;el.className=good?'clubFeedback success':'clubFeedback'}if(good){club.classList.remove('celebrate');void club.offsetWidth;club.classList.add('celebrate')}}
@@ -2813,7 +2823,7 @@ var ETM_PDF_WORKER="LyoqCiAqIEBsaWNzdGFydCBUaGUgZm9sbG93aW5nIGlzIHRoZSBlbnRpcmUg
 
 
   // Optional maths AI module; failure never blocks the existing family app.
-  (function(){var version='20261117-family-play-21.0',config=document.createElement('script');config.src='maths-ai-config.js?v='+version;config.onload=load;config.onerror=load;document.head.appendChild(config);async function load(){try{for(var cssFile of ['maths-coach.css','learning.css']){var cssResponse=await fetch(cssFile+'?v='+version,{cache:'no-cache'});if(!cssResponse.ok)throw Error('Learning styles unavailable');var style=document.createElement('style');style.dataset.etmAsset=cssFile;style.textContent=await cssResponse.text();document.head.appendChild(style);}for(var jsFile of ['maths-coach.js','ai-lab.js','learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','piano-audio.js','family-games.js','atlas.js','learning.js','number-tables.js','piano-study.js','maths-discovery.js','family-sync-core.js','family-sync.js','screen-share.js','connection-health.js','family-reconnect.js','question-controls.js','family-home.js','private-family.js','friend-games.js','friend-room.js','game-invites.js','draw-together.js','equation-sheet.js','practice-sheet.js']){var response=await fetch(jsFile+'?v='+version,{cache:'no-cache'});if(!response.ok)throw Error('Learning module unavailable: '+jsFile);var source=await response.text();eval(source);}if(pl&&document.body.dataset.room==='home')home();}catch(error){console.warn('ETM learning update did not finish loading. Refresh once publishing completes.');notice('The new learning update is still loading. Refresh after publishing finishes.');}}})();
+  (function(){var version='20261117-family-play-21.1',config=document.createElement('script');config.src='maths-ai-config.js?v='+version;config.onload=load;config.onerror=load;document.head.appendChild(config);async function load(){try{for(var cssFile of ['maths-coach.css','learning.css']){var cssResponse=await fetch(cssFile+'?v='+version,{cache:'no-cache'});if(!cssResponse.ok)throw Error('Learning styles unavailable');var style=document.createElement('style');style.dataset.etmAsset=cssFile;style.textContent=await cssResponse.text();document.head.appendChild(style);}for(var jsFile of ['maths-coach.js','ai-lab.js','learning-data.js','learning-extra.js','learning-core.js','piano-study-core.js','piano-guides.js','piano-audio.js','family-games.js','atlas.js','learning.js','number-tables.js','piano-study.js','maths-discovery.js','family-sync-core.js','family-sync.js','screen-share.js','connection-health.js','family-reconnect.js','question-controls.js','family-home.js','private-family.js','friend-games.js','friend-room.js','game-invites.js','draw-together.js','equation-sheet.js','practice-sheet.js']){var response=await fetch(jsFile+'?v='+version,{cache:'no-cache'});if(!response.ok)throw Error('Learning module unavailable: '+jsFile);var source=await response.text();eval(source);}if(pl&&document.body.dataset.room==='home')home();}catch(error){console.warn('ETM learning update did not finish loading. Refresh once publishing completes.');notice('The new learning update is still loading. Refresh after publishing finishes.');}}})();
   // Entry always uses profile cards. The saved family link supplies the room.
   $('wp').style.display='none';$('gate').style.display='none';entryScreen(false);
 

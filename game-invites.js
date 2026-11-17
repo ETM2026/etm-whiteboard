@@ -3,14 +3,14 @@
 window.ETMGameInvites=(function(){
   const prompts=new Map(),sent=new Map();
   let current=null, actor=accessSession;
-  let badge;
+  let badge;const dismissed=new Map();
   function count(){
     if(!badge&&typeof appHeader!=='undefined')badge=btn('',()=>{if(current)return;const first=prompts.values().next().value;if(first){first.parked=false;showNext()}},appHeader,'inviteBadge');
-    if(badge){badge.hidden=!prompts.size;badge.textContent='Invites ('+prompts.size+')';badge.setAttribute('aria-live','polite')}
+    if(badge){badge.hidden=!prompts.size;badge.textContent=(prompts.values().next().value?.title||'Invites')+(prompts.size>1?' ('+prompts.size+')':'');badge.setAttribute('aria-live','polite')}
   }
   function close(id){
     const p=prompts.get(id);if(!p)return;
-    clearTimeout(p.timer);prompts.delete(id);count();
+    clearTimeout(p.timer);dismissed.set(id,Date.now());prompts.delete(id);count();
     if(current===id){current=null;p.dialog?.remove();showNext()}
   }
   function showNext(){
@@ -18,7 +18,7 @@ window.ETMGameInvites=(function(){
     const next=Array.from(prompts.entries()).find(([,p])=>!p.parked);if(!next)return;const [id,p]=next;current=id;
     const d=p.dialog=node('dialog',undefined,document.body,'gameInviteCard');
     const title=node('h2',p.title,d);title.id='etmInviteTitle';d.setAttribute('aria-labelledby',title.id);
-    if(p.text)node('p',p.text,d);
+    if(p.person)window.etmMotif?.(title,p.person);if(p.text)node('p',p.text,d);
     p.options?.(d);
     const yes=btn(p.yes,()=>{close(id);p.accept()},d,'primaryButton');
     const no=()=>{close(id);p.decline?.()};
@@ -29,34 +29,36 @@ window.ETMGameInvites=(function(){
   }
   function prompt(id,options){
     if(actor!==accessSession)reset();if(prompts.has(id))return;
-    options.timer=setTimeout(()=>close(id),90000);
+    options.timer=setTimeout(()=>close(id),Math.min(90000,Math.max(0,(options.expires||Date.now()+90000)-Date.now())));
     prompts.set(id,options);count();showNext();
   }
   function reset(){
     for(const p of prompts.values()){clearTimeout(p.timer);p.dialog?.remove()}
     current=null;prompts.clear();count();
-    for(const s of sent.values())clearTimeout(s.timer);
+    dismissed.clear();for(const s of sent.values()){clearTimeout(s.timer);clearInterval(s.retry)}
     sent.clear();actor=accessSession;
   }
   function devices(){return familyActor()?allowedDevices().filter(d=>Date.now()-d.seen<90000):[]}
   function names(){return Array.from(new Set(devices().map(d=>d.name)))}
   function forget(id,cancel=true){
     const s=sent.get(id);if(!s)return;
-    clearTimeout(s.timer);sent.delete(id);
+    clearTimeout(s.timer);clearInterval(s.retry);sent.delete(id);
     if(cancel&&s.actor===accessSession)for(const d of s.targets)send('etm-game-invite-19',{to:d.id,name:d.name,id,kind:'cancel'});
   }
   async function invite(name,visit,update,onJoin){
     if(actor!==accessSession)reset();const targets=devices().filter(d=>d.name===name);
     if(!targets.length||!memberKeys){update('Waiting for '+name+' to come online.');return}
-    const id=crypto.randomUUID(),s={actor:accessSession,targets,update,onJoin,name,declined:new Set()};sent.set(id,s);
+    const id=crypto.randomUUID(),s={actor:accessSession,targets,update,onJoin,name,declined:new Set(),seen:new Set(),offers:new Map()};sent.set(id,s);
     update('Waiting for delivery to '+name+'…');
+    const expiry=Date.now()+90000;s.retry=setInterval(()=>{if(s.actor===accessSession)for(const [target,offer] of s.offers)if(!s.seen.has(target))send('etm-game-invite-19',offer)},6500);
     s.timer=setTimeout(()=>{forget(id);update('No reply from '+name+'. Invite again.')},90000);
     try{
       for(const d of targets){
         const iv=crypto.getRandomValues(new Uint8Array(12));
         const box=await crypto.subtle.encrypt({name:'AES-GCM',iv},await letterKey(d.key),new TextEncoder().encode(visit));
         if(sent.get(id)!==s||accessSession!==s.actor)return;
-        await send('etm-game-invite-19',{to:d.id,name,id,kind:'offer',key:memberKeys.public,iv:b64(iv),box:b64(box)});
+        const offer={to:d.id,name,id,kind:'offer',key:memberKeys.public,iv:b64(iv),box:b64(box),expires:expiry};
+        s.offers.set(d.id,offer);await send('etm-game-invite-19',offer);
       }
     }catch{forget(id);update('Couldn’t deliver the invitation. Try again.')}
     return id;
@@ -114,22 +116,23 @@ window.ETMGameInvites=(function(){
     if(d.kind==='seen'||d.kind==='joining'||d.kind==='later'){
       const s=sent.get(d.id);
       if(s?.actor!==session||!s.targets.some(p=>p.id===b.from&&p.name===b.name))return;
-      if(d.kind==='later'){s.declined.add(b.from);if(s.declined.size!==s.targets.length)return}
+      s.seen.add(b.from);if(d.kind==='later'){s.declined.add(b.from);if(s.declined.size!==s.targets.length)return}
       s.update(d.kind==='seen'?b.name+' can see your invitation.':d.kind==='joining'?b.name+' tapped Join. Connecting…':b.name+' chose Not now.');
       if(d.kind==='joining')Promise.resolve(s.onJoin?.(d.id,s.targets.find(p=>p.id===b.from))).catch(()=>s.update('Could not open the connection. Invite again.'));
       if(d.kind!=='seen')forget(d.id,d.kind==='joining');
       return;
     }
-    if(d.kind!=='offer'||typeof d.box!=='string'||d.box.length>512||prompts.has(key))return;
+    if(prompts.get(key)?.seen&&d.kind==='offer'){send('etm-game-invite-19',{to:b.from,name:b.name,id:d.id,kind:'seen'});return}
+    if(dismissed.has(key)||Number.isFinite(d.expires)&&d.expires<=Date.now()||d.kind!=='offer'||typeof d.box!=='string'||d.box.length>512||prompts.has(key))return;
     try{
       const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(d.iv)},await letterKey(d.key),unb64(d.box));
       if(accessSession!==session)return;
       const visit=new TextDecoder().decode(clear),drawing=visit==='draw-together-v1',sheet=visit==='practice-sheet-v1',handler=sheet?window.ETMSheet:drawing?window.ETMDraw:window.ETMFriends,info=handler?.describe(visit);if(!info||sheet&&(b.role!=='dad'||b.name!=='Dad'||session.role!=='child'))return;
       const reply=kind=>{if(session===accessSession)send('etm-game-invite-19',{to:b.from,name:b.name,id:d.id,kind})};
-      prompt(key,{title:b.name+' invites you to '+info.title,text:sheet?'Write your answers while Dad follows along.':drawing?'You can both draw on the same picture.':'Play together on your own screens.',yes:info.yes,
+      prompt(key,{expires:d.expires,person:b.name,title:b.name+' invites you to '+info.title,text:sheet?'Write your answers while Dad follows along.':drawing?'You can both draw on the same picture.':'Play together on your own screens.',yes:info.yes,
         options:info.options,shown:()=>reply('seen'),accept:()=>{reply('joining');handler.joinVisit(visit,{id:b.from,name:b.name,key:d.key},d.id)},decline:()=>reply('later')});
     }catch{/* A different family device cannot open this invitation. */}
   }
-  setInterval(()=>{if(actor!==accessSession)reset()},500);
+  setInterval(()=>{for(const [id,at] of dismissed)if(Date.now()-at>100000)dismissed.delete(id);if(actor!==accessSession)reset()},500);
   return {prompt,close,reset,names,invite,forget,receive,channel};
 })();
