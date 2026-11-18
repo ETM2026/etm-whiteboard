@@ -67,7 +67,7 @@
     const previous=r.gameView;
     r.gameView=v;r.viewUntil=v.remaining==null?0:Date.now()+v.remaining;
     if(previous?.running&&v.running&&!v.done&&previous.attempt===v.attempt&&r.scoreLabel?.isConnected){
-      r.scoreLabel.textContent=scoreText(r,v);
+      r.scoreLabel.textContent=scoreText(r,v);if(r.strips)r.strips.forEach((b,i)=>{b.textContent=b.dataset.player+' · '+v.scores[i]});
       return;
     }
     r.selected=null;r.called=false;r.wild=null;refresh(r);
@@ -438,6 +438,12 @@
       btn('Decline invitation',()=>{send(r,{type:'decline'});end(r,'Invitation closed.')},card,'quietButton');
     }
     if(r.partner){
+      if(!r.duo){r.strips=[];const strip=node('div',undefined,card,'playersStrip');for(const [i,n] of (r.host?[r.name,r.partner]:[r.partner,r.name]).entries()){
+        const badge=node('strong',n,strip);badge.dataset.player=n;r.strips.push(badge);window.etmMotif?.(badge,n);
+        const current=extended(r.game)?r.gameView?.turn:r.game==='rally'?(r.answers.length+r.round-1)%2:turn(r)==='X'?0:1;
+        if(!finished(r)&&!FriendGames.isRace(r.game)&&current===i)badge.className='activeSeat';
+        const score=r.gameView?.scores?.[i]??(r.game==='rally'?r.answers.filter(a=>a.seat===i&&a.correct).length:null);if(score!=null)badge.textContent+=' · '+score;
+      }}
       if(r.duo&&!r.spell){
         ensurePaper(r);
         btn(r.paperOpen?'Play a number rally':'Back to our paper',()=>{
@@ -479,7 +485,7 @@
       }
       if(!r.paperOpen&&finished(r)){window.etmMotif?.(card.querySelector?.('.friendTurn'),r.name);
         if(r.offer==='out')node('p','Rematch requested. Waiting for '+r.partner+'.',card);
-        else btn(r.offer==='in'?'Accept rematch':'Play again',()=>requestAgain(r),card,'primaryButton');
+        else btn(r.offer==='in'?'Accept rematch':'Play again with '+r.partner,()=>requestAgain(r),card,'primaryButton');
         if(r.offer==='in')btn('Finish here',()=>{send(r,{type:'decline-rematch',round:r.round});r.offer='';end(r,'You finished the game.')},card,'quietButton');
       }
       if(!canChat(r))node('p','Games only · chat is off for this visit.',card);else{
