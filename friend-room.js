@@ -187,10 +187,10 @@
     header.setAttribute('aria-label',r.candidate?'Open join request from '+r.candidate:r.unread?r.unread+' unread friend messages':r.duo&&r.partner?'Back to '+r.partner:'Return to friend room');
   }
   function inviteReady(r){return r.host&&r.ready&&!r.partner&&!r.candidate}
-  async function start(token,host,other,inviteId,duo=false,inviteName=''){
+  async function start(token,host,other,inviteId,duo=false,inviteName='',spell=false){
     if(!actor()||!/^[a-f0-9]{48}$/.test(token))return;
     leave();
-    const r=room={duo,inviteName,paperOpen:duo,actor:actor(),host,token,name:display(),partner:'',candidate:'',ready:false,game:host?chosenGame:inviteGame||'three',op:operation,steps:[myStep,myStep],prefs:[FriendGames.settings(choice),FriendGames.settings(choice)],answers:[],offer:'',chat:false,board:Array(host&&chosenGame==='four'?42:9).fill(''),round:1,unread:0,messages:[],recent:[],last:Date.now(),muted:false,status:'Connecting…'};
+    const r=room={spell,duo,inviteName,paperOpen:duo,actor:actor(),host,token,name:display(),partner:'',candidate:'',ready:false,game:host?chosenGame:inviteGame||'three',op:operation,steps:[myStep,myStep],prefs:[FriendGames.settings(choice),FriendGames.settings(choice)],answers:[],offer:'',chat:false,board:Array(host&&chosenGame==='four'?42:9).fill(''),round:1,unread:0,messages:[],recent:[],last:Date.now(),muted:false,status:'Connecting…'};
     draw(r);updateHeader(r);
     try{
       const [id,hostProof,guestProof]=await Promise.all(['room','host','guest'].map(k=>stamp(token,k)));
@@ -259,7 +259,7 @@
           r.last=Date.now();if(r.waiting){r.waiting=false;refresh(r);updateHeader(r);notice('Back to game with '+r.partner)}
           if(m.type==='goodbye'){end(r,r.partner+' left. This room is closed.');return}if(m.type==='ping')return;
           if(r.duo&&c.family){
-            if(m.type==='kept-page'){ensurePaper(r);if(ETM_CORE.validPage(m.page))r.storePage(m.page);return}
+            if(r.spell){if(m.type==='spelling-draft'&&r.actor.role==='dad'){r.draft=clean(m.text,100);if(r.spellingText)r.spellingText.textContent=r.draft}return}if(m.type==='kept-page'){ensurePaper(r);if(ETM_CORE.validPage(m.page))r.storePage(m.page);return}
             if(m.type==='paper-point'){ensurePaper(r);r.paperBoard.highlight(m.i);return}
             if(m.type==='paper'&&window.ETMEquations.valid(m.state)){
               ensurePaper(r);r.paperBoard.receive(m.state);savePaper(r);return;
@@ -406,7 +406,7 @@
       if(!names.length)node('p',r.duo?'Open ETM on the other device and choose your family profile. Their name will appear here.':'Waiting for family to come online. You can also share the link below.',buttons);
       async function invitePerson(name){
         if(r.sending)return;r.sending=true;invites.forget(r.directId);
-        const id=await invites.invite(name,r.duo?r.token+'.duo':link(r).split('#play=')[1],msg=>{
+        const id=await invites.invite(name,r.duo?r.token+(r.spell?'.spell':'.duo'):link(r).split('#play=')[1],msg=>{
           r.inviteStatus=msg;if(active(r)&&r.inviteLabel?.isConnected)r.inviteLabel.textContent=msg;
         },(id,person)=>r.familyConnect(id,person));
         r.sending=false;if(!active(r)||r.partner)invites.forget(id);else r.directId=id;
@@ -420,7 +420,7 @@
   function draw(r){
     if(!active(r))return;
     const draft=panel?.isConnected&&messageBox?messageBox.value:'',wasTyping=messageBox&&document.activeElement===messageBox;
-    panel=learningPage(r.duo?'Maths together':'Play with a friend','friends',r.duo?home:learningPlayTogether);thread=null;messageBox=null;
+    panel=learningPage(r.spell?'Spell with Dad':r.duo?'Maths together':'Play with a friend','friends',r.duo?home:learningPlayTogether);thread=null;messageBox=null;
     const card=node('div',undefined,panel,'friendCard');
     const heading=node('h2',r.partner?'You and '+r.partner:r.status,card);window.etmMotif?.(heading,r.partner||r.name);
     if(r.partner){r.connectionNote=node('p',r.waiting?'Rejoining '+r.partner+'… Your game is here.':'',card);r.connectionNote.setAttribute('role','status');r.connectionNote.hidden=!r.waiting}
@@ -438,7 +438,7 @@
       btn('Decline invitation',()=>{send(r,{type:'decline'});end(r,'Invitation closed.')},card,'quietButton');
     }
     if(r.partner){
-      if(r.duo){
+      if(r.duo&&!r.spell){
         ensurePaper(r);
         btn(r.paperOpen?'Play a number rally':'Back to our paper',()=>{
           const paper=!r.paperOpen;
@@ -446,7 +446,14 @@
           if(r.host){r.paperOpen=paper;refresh(r)}
         },card,'lPill');
       }
-      if(r.waiting){node('p','Play continues when you are both connected.',card)}else if(r.duo&&r.paperOpen){card.appendChild(r.paperElement)}
+      if(r.waiting){node('p','Play continues when you are both connected.',card)}else if(r.spell){
+        if(!r.spellingBox){r.spellingBox=document.createElement('section');
+          if(r.actor.role==='dad'){r.spellingText=node('p',r.draft||'Waiting for the first word…',r.spellingBox)}
+          else{const words=ETM_CORE.profile(learningState,r.name).spellingList?.words||[];
+            if(words.length)spellingRound(r.spellingBox,words,true,r.name,text=>send(r,{type:'spelling-draft',text}));
+            else node('p','Add your weekly words in Reading first.',r.spellingBox)}
+        }card.appendChild(r.spellingBox);
+      }else if(r.duo&&r.paperOpen){card.appendChild(r.paperElement)}
       else if(extended(r.game)){const seq=r.gameView?.seq;friendGameBoard(r,card,a=>action(r,a,0,seq),()=>refresh(r))}else if(r.game==='rally')drawRally(r,card);else{
       const mark=r.host?'X':'O',winner=result(r.board),myTurn=turn(r)===mark;
       const counter=m=>r.game==='four'?(m==='X'?'red ●':'gold ◆'):m;
@@ -499,7 +506,7 @@
     const match=/^([a-f0-9]{48})(?:[.]([a-z]{2,9})(?:[.](add|sub|times))?)?$/.exec(t);if(!match||match[2]&&!Object.hasOwn(titles,match[2]))return;
     invitationShown=true;pendingInvite=match[1];inviteGame=match[2]||'';if(validOp(match[3]))operation=match[3];lobby();
   }
-  function describe(visit){
+  function describe(visit){if(/^[a-f0-9]{48}\.spell$/.test(visit)&&familyActor())return {token:visit.split('.')[0],game:'rally',duo:true,spell:true,title:'Spell with Dad',yes:'Join spellings'};
     if(/^[a-f0-9]{48}\.duo$/.test(visit)&&familyActor())return {token:visit.split('.')[0],game:'rally',duo:true,title:'Maths together',yes:'Join maths'};
     const m=/^([a-f0-9]{48})[.]([a-z]{2,9})(?:[.](add|sub|times))?$/.exec(visit);
     if(!m||!Object.hasOwn(titles,m[2]))return null;
@@ -515,8 +522,8 @@
     }
   },refreshPaper(name,paper){
     if(room&&active(room)&&room.paperOwner===name&&room.paperBoard)room.paperBoard.receive(paper);
-  },together(inviteName=''){if(!familyActor())return;if(room&&active(room)){draw(room);return}chosenGame='rally';operation='add';myStep=2;start(hex(crypto.getRandomValues(new Uint8Array(24))),true,null,null,true,inviteName)},open:lobby,leave,arrive,describe,joinVisit(visit,other,id){
-    const info=describe(visit);if(!info||!actor())return;inviteGame=info.game;pendingInvite='';if(validOp(info.op))operation=info.op;if(info.duo&&!(actor().role==='dad'?FAMILY.includes(other.name):other.name==='Dad'))return;start(info.token,false,other,id,!!info.duo);
+  },together(inviteName='',spell=false){if(!familyActor())return;if(room&&active(room)){draw(room);return}chosenGame='rally';operation='add';myStep=2;start(hex(crypto.getRandomValues(new Uint8Array(24))),true,null,null,true,inviteName,spell)},open:lobby,leave,arrive,describe,joinVisit(visit,other,id){
+    const info=describe(visit);if(!info||!actor())return;inviteGame=info.game;pendingInvite='';if(validOp(info.op))operation=info.op;if(info.duo&&!(actor().role==='dad'?FAMILY.includes(other.name):other.name==='Dad'))return;start(info.token,false,other,id,!!info.duo,'',!!info.spell);
   },choose(id){if(Object.hasOwn(titles,id))chosenGame=id;lobby()},rally(op,step){chosenGame='rally';operation=validOp(op)?op:'add';myStep=validStep(step)?step:2;lobby()}};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&room&&active(room)&&room.unread&&panel?.isConnected&&thread?.isConnected){paintChat(room);room.unread=0;updateHeader(room)}});
   window.addEventListener('pagehide',leave);
