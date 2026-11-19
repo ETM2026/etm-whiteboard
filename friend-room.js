@@ -145,7 +145,7 @@
     const scores=[0,0],seat=r.host?0:1;
     for(const a of r.answers)if(a.correct)scores[a.seat]++;
     const done=finished(r),i=r.answers.length,myTurn=((i+r.round-1)%2)===seat;
-    const title=done?scores[0]===scores[1]?'A draw!':scores[seat]>scores[1-seat]?'You won!':r.partner+' won!':myTurn?'Your turn':r.partner+'’s turn';
+    const title=done?scores[0]===scores[1]?'A draw!':scores[seat]>scores[1-seat]?'You won!':r.partner+' won!':myTurn?'Your turn, '+r.name:r.partner+'’s turn';
     node('p','Number rally · '+title,card,'friendTurn').setAttribute('role','status');
     const tracks=node('div',undefined,card,'rallyTracks');
     for(const who of [seat,1-seat]){
@@ -463,7 +463,7 @@
       else if(extended(r.game)){const seq=r.gameView?.seq;friendGameBoard(r,card,a=>action(r,a,0,seq),()=>refresh(r))}else if(r.game==='rally')drawRally(r,card);else{
       const mark=r.host?'X':'O',winner=result(r.board),myTurn=turn(r)===mark;
       const counter=m=>r.game==='four'?(m==='X'?'red ●':'gold ◆'):m;
-      const status=winner==='draw'?'A draw!':winner?(winner===mark?'You won!':r.partner+' won!'):myTurn?'Your turn · '+counter(mark):r.partner+'’s turn · '+counter(turn(r));
+      const status=winner==='draw'?'A draw!':winner?(winner===mark?'You won!':r.partner+' won!'):myTurn?'Your turn, '+r.name+' · '+counter(mark):r.partner+'’s turn · '+counter(turn(r));
       node('p',(r.game==='four'?'Connect four':'Three in a row')+' · '+status,card,'friendTurn').setAttribute('role','status');
       const board=node('div',undefined,card,r.game==='four'?'friendFour':'friendBoard');
       if(r.game==='four'){

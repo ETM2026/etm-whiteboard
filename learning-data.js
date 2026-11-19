@@ -165,7 +165,10 @@ var ETM_DATA=(function(){
  ['Find the west-coast city across the island from Dublin.','Galway',['Cork','Belfast','Athlone'],'Galway faces the Atlantic on the west coast.',1],
  ['Follow the Shannon downstream from Athlone. Which city do you reach?','Limerick',['Cork','Dublin','Belfast'],'The Shannon flows through Limerick toward its estuary.',2],
  ['A boat leaves the River Liffey and enters a bay. Which city has it passed?','Dublin',['Galway','Cork','Limerick'],'The River Liffey meets Dublin Bay on the east coast.',2],
- ['Travel north-east from Dublin to a city at the head of a lough. Where are you?','Belfast',['Athlone','Cork','Limerick'],'Belfast sits at the head of Belfast Lough.',2]
+ ['Travel north-east from Dublin to a city at the head of a lough. Where are you?','Belfast',['Athlone','Cork','Limerick'],'Belfast sits at the head of Belfast Lough.',2],
+ ['Find the fishing harbour in County Donegal.','Killybegs',['Athlone','Dublin','Belfast'],'Killybegs Harbour opens into Donegal Bay.',0],
+ ['Follow the River Eske to Donegal Bay. Which town do you reach?','Donegal Town',['Cork','Galway','Athlone'],'The Eske meets the bay at Donegal Town.',1],
+ ['Follow the coast west from Donegal Town. Which fishing port do you reach?','Killybegs',['Dublin','Limerick','Cork'],'Killybegs lies west of Donegal Town on the same bay.',2]
  ]);
  unit('australia','geography','Explore Australia','🦘','australia',[
  'Find the mainland, then Tasmania. Tap the pins to discover a harbour, a city and a great rock.',

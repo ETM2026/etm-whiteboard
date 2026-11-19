@@ -7,7 +7,7 @@ window.ETMDraw=(()=>{
   function snapshot(){
     const c=document.createElement('canvas');c.width=W;c.height=H;
     const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,W,H);
-    ctx.drawImage(drawingSnapshot(),0,0,W,H);
+    paintDrawingPreview(ctx,W,H);
     return c;
   }
   function choose(){
@@ -113,11 +113,11 @@ window.ETMDraw=(()=>{
     page.onpointerdown=e=>{
       if(!ready||closing||ended||pen||e.button!==0)return;e.preventDefault();
       const m={id:++clock,side:local,c:colour,p:position(e)};revision++;marks[local].set(m.id,m);history.push(m.id);
-      pen={pointer:e.pointerId,mark:m,offset:0};page.setPointerCapture(e.pointerId);delta();paint();
+      pen={pointer:e.pointerId,mark:m,offset:0};try{page.setPointerCapture?.(e.pointerId)}catch{}delta();paint();
     };
     page.onpointermove=e=>{
       if(!pen||pen.pointer!==e.pointerId)return;const xy=position(e),p=pen.mark.p;
-      if(p.at(-2)===xy[0]&&p.at(-1)===xy[1])return;
+      if(p[p.length-2]===xy[0]&&p[p.length-1]===xy[1])return;
       p.push(...xy);revision++;if(Date.now()-previewAt>=140||p.length-pen.offset>=256)delta();paint();
     };
     page.onpointerup=page.onpointercancel=page.onlostpointercapture=e=>{if(pen?.pointer===e.pointerId)finishPen()};

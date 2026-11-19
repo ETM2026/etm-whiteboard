@@ -103,6 +103,8 @@ function learningAtlas(kind, box) {
 
 var atlasStops={
  ireland:[
+   ['Killybegs',-8.445,54.634,-9,12,'Fishing boats shelter in Killybegs Harbour. The town is in County Donegal, on the coast of Donegal Bay.'],
+   ['Donegal Town',-8.110,54.654,9,14,'Donegal Town stands where the River Eske reaches Donegal Bay. County Donegal includes both Donegal Town and Killybegs.'],
    ['Dublin',-6.26,53.35,8,-6,'Dublin is the capital of Ireland. The River Liffey flows east through the city into Dublin Bay.'],
    ['Belfast',-5.93,54.60,8,-7,'Belfast is the capital of Northern Ireland. Ships can reach the city through Belfast Lough.'],
    ['Galway',-9.05,53.27,-8,-7,'Galway sits on Galway Bay on the Atlantic side of the island.'],
@@ -144,6 +146,8 @@ function regionalMap(kind,parent,quiz){
  const river=svgEl('g',{'pointer-events':'none'},svg);
  let riverChoice=null;
  const predictions={
+   Killybegs:['Your boat leaves Killybegs Harbour. Which bay are you sailing into?','Donegal Bay','Galway Bay','Look for the bay named after the county.'],
+   'Donegal Town':['Use the north arrow. Which direction is Killybegs from Donegal Town?','West','East','West is to the left on this map.'],
    Dublin:['Which way does the Liffey flow into Dublin Bay?','East','West','Look for the sea on Dublin’s side.'],
    Belfast:['How can a ship reach Belfast?','Through the lough','Over the hills','Look along the coast.'],
    Galway:['Which ocean meets Galway Bay?','Atlantic','Pacific','Trace the west coast of Ireland.'],

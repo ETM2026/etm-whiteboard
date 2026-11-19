@@ -150,11 +150,12 @@ function friendGameBoard(r,card,act,redraw){
     const cooperative=['word','draw','voyage'].includes(r.game);
     const win=r.game==='uno'?v.winner:v.scores[0]===v.scores[1]?null:v.scores[0]>v.scores[1]?0:1;
     node('p',cooperative?'You did it together!':win===null?'A draw!':win===seat?'You won!':names[win]+' won!',card,'friendTurn').setAttribute('role','status');
-  }else if(!racing)node('p',r.game==='draw'?(mine?'Your turn to draw':names[v.turn]+' is drawing'):mine?'Your turn':names[v.turn]+'’s turn',card,'friendTurn').setAttribute('role','status');
+  }else if(!racing)node('p',r.game==='draw'?(mine?'Your turn to draw':names[v.turn]+' is drawing'):r.game==='checkers'&&v.chain!=null?names[v.turn]+', jump again with the same piece':mine?'Your turn, '+names[seat]:names[v.turn]+'’s turn',card,'friendTurn').setAttribute('role','status');
   if(['pairs','quiz','sprint','tables','music','notes'].includes(r.game)||r.game==='uno'&&v.done)
     r.scoreLabel=node('p',scoreText(r,v),card,'fgPlayers');
   if(v.message)node('p',v.message,card,'fgMessage').setAttribute('role','status');
   if(v.done){if(v.mask)node('h3',v.mask,card);if(r.game==='draw')friendDrawing(v,false,card,act,true);return}
+  if(racing&&v.running)node('p','Both players are racing',card,'friendTurn');
   if(racing&&!v.running){node('p',r.game==='tables'||r.game==='sprint'?'Both tap Ready. Score as many as you can in one minute.':'Both tap Ready. First to ten correct wins.',card);
     if(v.ready[seat])node('p','Waiting for '+r.partner+' to be ready.',card);
     else btn('Ready to race',()=>act({kind:'ready'}),card,'primaryButton');

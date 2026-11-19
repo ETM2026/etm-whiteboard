@@ -37,7 +37,6 @@ window.ETMSheet=(()=>{
       const submit=btn(wire?.open?'Send new sheet':'Invite '+partner,async()=>{
         const next=select.value==='table'?{kind:'table',step:Number(table.value)}:{kind:select.value,text:select.value==='equations'?'Shared maths paper':input.value.trim()};
         if(!validPage(next)){input.focus();return}
-        if(!wire&&next.kind==='equations'){dispose();window.ETMFriends.together(partner);return}
         if(wire?.open){
           if(wire.pending>=40){report('Reconnecting. Try sending the new sheet again in a moment.');return}
           if((answers.some(Boolean)||working?.cells.some(c=>c[1]))&&!confirm('Start a new sheet and clear the answers on this one?'))return;
@@ -123,7 +122,7 @@ window.ETMSheet=(()=>{
     return active={dialog:d,attach,dispose,live,report};
   }
   return {
-    setup(name,initial){if(initial==='equations'&&dadUnlocked()&&FAMILY.includes(name)){window.ETMFriends.together(name);return}if(active){active.dialog.focus();return}if(familyActor()&&dadUnlocked()&&FAMILY.includes(name))room(name,true,initial)},
+    setup(name,initial){if(active){active.dialog.focus();return}if(familyActor()&&dadUnlocked()&&FAMILY.includes(name))room(name,true,initial)},
     describe(){return !active&&familyActor()&&accessSession.role==='child'?{title:'Practise with Dad',yes:'Join practice'}:null},
     async joinVisit(_,who,id){
       if(active||!familyActor()||accessSession.role!=='child'||who.name!=='Dad')return;

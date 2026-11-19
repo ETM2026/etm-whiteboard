@@ -13,7 +13,7 @@ function learningStore(){
 }
 function learningName(){return childName()}
 function learningProfile(){if(pl&&pl.guest){if(!learningGuest)learningGuest={level:0,events:[]};return learningGuest}return ETM_CORE.profile(learningState,learningName())}
-function learningSpeak(text){if(window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined'){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.rate=.86;window.speechSynthesis.speak(u)}else notice('Read-aloud is not available on this device.')}
+function learningSpeak(text,lang){if(window.speechSynthesis&&typeof SpeechSynthesisUtterance!=='undefined'){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);if(lang)u.lang=lang;u.rate=.86;window.speechSynthesis.speak(u)}else notice('Read-aloud is not available on this device.')}
 function learningPage(title,key,back){if(typeof tutorRefreshIdentity==='function')tutorRefreshIdentity();stopCoach();if(window.speechSynthesis)window.speechSynthesis.cancel();setRoom(key||'learn',title,back||home);var a=shell(title,'');a.classList.add('learningV2');if(typeof pl!=='undefined'&&pl&&!pl.guest)window.etmMotif?.(club.querySelector('.pageHeading h1'),pl.n);return a}
 function learningCard(parent,icon,title,copy,fn,tint){var b=btn('',fn,parent,'lCard '+(tint||''));node('span',icon,b,'lCardIcon');var c=node('span',undefined,b,'lCardCopy');node('strong',title,c);node('small',copy,c);node('span','↗',b,'lCardArrow');return b}
 function learningSelect(a,label,options,value){var l=node('label',undefined,a,'lField');node('span',label,l);var select=node('select',undefined,l);options.forEach(function(x){var o=node('option',x[1],select);o.value=x[0]});select.value=String(value===undefined?options[0][0]:value);return select}
@@ -347,17 +347,52 @@ function spellingRoom(owner){
   const list=profile.spellingList?.words||[];
   const editor=node('section',undefined,area,'spellCard');function edit(){
     editor.replaceChildren();node('h2','This week’s words',editor);
+    const language=learningSelect(editor,'List language',[['en','English'],['ga','Gaeilge']],profile.spellingList?.language||'en');
     const label=node('label','Type or paste your words, one per line.',editor),input=node('textarea',undefined,label);
     input.rows=8;input.value=list.join('\n');input.maxLength=3000;
     btn('Save '+owner+'’s words',()=>{const words=[...new Set(input.value.split(/[,;\n]+/).map(w=>w.trim().normalize('NFC')).filter(Boolean))];
       if(!words.length||words.length>50||words.some(w=>w.length>60)){notice('Use 1 to 50 words, up to 60 letters each.');return}
-      const current=ETM_CORE.profile(learningState,owner);current.spellingList={at:Date.now(),words};current.spellingRound={at:Date.now(),done:true};if(learningStore())spellingRoom(owner);else notice('Could not save your words on this device.');
+      const current=ETM_CORE.profile(learningState,owner);current.spellingList={at:Date.now(),words,language:language.value,clips:(current.spellingList?.language===language.value?current.spellingList.clips||[]:[]).filter(c=>words.includes(c.word))};current.spellingRound={at:Date.now(),done:true};if(learningStore())spellingRoom(owner);else notice('Could not save your words on this device.');
     },editor,'primaryButton');
   }
   if(!list.length){edit();return}
   if(profile.spellingRound?.queue&&!profile.spellingRound.done)btn('Continue my round',()=>spellingRound(area,list,false,owner,null,true),editor,'primaryButton');
   node('h2',owner+'’s weekly spellings',editor);
+  const timing=learningSelect(editor,'When should ETM check my words?',[['each','After each word'],['end','At the end']],profileSettings(owner).spellingCheck||'each');
+  timing.onchange=()=>setProfileSettings(owner,{spellingCheck:timing.value});
   for(const [label,test] of [['Help me learn',false],['Test myself',true]])btn(label,()=>spellingRound(area,test?ETM_CORE.shuffle(list):ETM_CORE.shuffle(list).slice(0,5),test,owner),editor,'primaryButton');
+  if(dadUnlocked()&&profile.spellingList?.language==='ga'&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder){
+    const details=node('details',undefined,editor);node('summary','Record a pronunciation',details);
+    const choice=learningSelect(details,'Choose a word',list.map(w=>[w,w]),list[0]);
+    const status=node('p','Each recording lasts up to four seconds.',details);status.setAttribute('role','status');
+    let recorder;
+    const record=btn('Record this word',async()=>{
+      if(recorder?.state==='recording'){recorder.stop();return}
+      const word=choice.value,actor=accessSession;let stream,timer;
+      record.disabled=true;choice.disabled=true;
+      const reset=()=>{clearTimeout(timer);stream?.getTracks().forEach(t=>t.stop());record.disabled=false;choice.disabled=false;record.textContent='Record this word';recorder=null};
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        if(!details.isConnected||accessSession!==actor){reset();return}
+        const chunks=[];recorder=new MediaRecorder(stream,{audioBitsPerSecond:24000});const mime=recorder.mimeType;
+        recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+        recorder.onstop=()=>{
+          reset();if(!details.isConnected||accessSession!==actor)return;
+          const blob=new Blob(chunks,{type:mime});
+          if(!blob.size||blob.size>96000){status.textContent='Try a shorter recording.';return}
+          const reader=new FileReader();reader.onload=()=>{
+            if(!details.isConnected||accessSession!==actor)return;
+            const book=ETM_CORE.profile(learningState,owner).spellingList;
+            if(book.language!=='ga'||!book.words.includes(word))return;
+            book.clips=[...(book.clips||[]).filter(c=>c.word!==word),{word,audio:reader.result}];book.at=Date.now();
+            status.textContent=learningStore()?'Recording saved for '+word+'.':'Could not save this recording.';
+          };reader.readAsDataURL(blob);
+        };
+        recorder.start();status.textContent='Say '+word+'.';record.textContent='Stop recording';record.disabled=false;
+        timer=setTimeout(()=>{if(recorder?.state==='recording')recorder.stop()},4000);
+      }catch{reset();status.textContent='Microphone unavailable. Emily can still look, cover and spell.'}
+    },details,'lPill');
+  }
   btn('Spell with Dad',()=>window.ETMFriends.together(dadUnlocked()?owner:'Dad',true),editor,'lPill');
   btn('Edit weekly words',edit,editor,'quietButton');
   if(profile.spellingResult)node('p','Last round · '+profile.spellingResult.score,editor);
@@ -365,8 +400,9 @@ function spellingRoom(owner){
 function spellingRound(area,words,test,owner,observe,resume=false){
   const profile=()=>ETM_CORE.profile(learningState,owner);
   const round=resume?profile().spellingRound:{
-    test,queue:words.slice(),count:words.length,index:0,first:[],fixed:[],missed:[],remembered:[],tried:false,preview:!test
+    timing:profileSettings(owner).spellingCheck||'each',language:profile().spellingList?.language||'en',test,queue:words.slice(),count:words.length,index:0,first:[],fixed:[],missed:[],remembered:[],tried:false,preview:!test
   };
+  const deferred=(round.timing||(round.test?'end':'each'))==='end';
   function save(){
     if(!observe)profile().spellingRound={...round,at:Date.now()};
     if(!learningStore())notice('This round could not be saved on this device.');
@@ -379,14 +415,18 @@ function spellingRound(area,words,test,owner,observe,resume=false){
       node('h2','Round complete',card);
       for(const [label,set] of [['Got it first time',round.first],['Fixed it',round.fixed],['Remembered on your own',round.remembered]])if(set.length)node('p',label+' · '+set.join(', '),card);
       node('p',score,card);profile().spellingResult={score,at:Date.now()};save();observe?.(score);
-      if(round.missed.length)btn('Practise these words',()=>spellingRound(area,round.missed,false,owner,observe),card,'primaryButton');
+      if(round.missed.length)node('p','Words to practise · '+round.missed.join(', '),card);
+      if(round.missed.length)btn('Practise missed words',()=>spellingRound(area,round.missed,false,owner,observe),card,'primaryButton');
       btn('My spellings',()=>spellingRoom(owner),card,'lPill');return;
     }
     const revisit=round.index>=round.count;
     const heading=node('strong',revisit?'Remember it again':'Word '+(round.index+1)+' of '+round.count,card);window.etmMotif?.(heading,owner);
-    const hear=()=>learningSpeak(word.toLowerCase()==='hopping'?'Hopping. The rabbit is hopping over the log.':word);
-    btn('Hear the word',hear,card,'lPill');hear();
-    if(round.preview){node('h2',word,card);btn('Ready to spell',()=>{round.preview=false;save();show()},card,'primaryButton');return}
+    const irish=round.language==='ga';
+    const clip=irish&&profile().spellingList?.clips?.find(c=>c.word===word&&/^data:audio\//.test(c.audio));
+    const hasVoice=clip||!irish||window.speechSynthesis?.getVoices().some(v=>/^ga(?:-|$)/i.test(v.lang));
+    const hear=()=>clip?new Audio(clip.audio).play().catch(()=>{if(card.isConnected&&!card.querySelector('.audioWord'))node('strong',word,card,'audioWord')}):learningSpeak(word.toLowerCase()==='hopping'?'Hopping. The rabbit is hopping over the log.':word,irish?'ga-IE':'en-IE');
+    if(hasVoice){btn('Hear the word',hear,card,'lPill');hear();}
+    if(round.preview||(irish&&!hasVoice&&round.covered!==round.index)){node('h2',word,card);btn('Ready to spell',()=>{round.preview=false;round.covered=round.index;save();show()},card,'primaryButton');return}
     const label=node('label','Spell the word',card),input=node('input',undefined,label);
     input.maxLength=60;input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');
     const report=()=>observe?.('Word '+(round.index+1)+' · '+word+' → '+input.value);
@@ -403,18 +443,27 @@ function spellingRound(area,words,test,owner,observe,resume=false){
       for(const b of tiles.children){const n=used.get(b.textContent)||0;b.disabled=n>0;if(n)used.set(b.textContent,n-1)}
     }
     function changed(){tilesPaint();report()}
+    if(irish){
+      input.lang='ga';const keys=node('div',undefined,card,'spellTiles');
+      for(const letter of 'áéíóú'){
+        const key=btn(letter,()=>{if(input.disabled)return;let start=input.selectionStart,end=input.selectionEnd;
+          if(start===end&&start>0&&input.value[start-1].toLowerCase()===letter.normalize('NFD')[0])start--;
+          input.setRangeText(letter,start,end,'end');input.focus();changed()},keys,'mathTile');
+        key.onpointerdown=e=>e.preventDefault();
+      }
+    }
     input.oninput=changed;report();
     function check(){
       const typed=input.value.trim().normalize('NFC').toLowerCase(),target=word.toLowerCase();if(!typed||input.disabled)return;
       const ok=typed===target;
       if(!ok&&!round.missed.includes(word))round.missed.push(word);
-      if(!ok&&!round.test){
+      if(!ok&&!deferred){
         round.tried=true;save();let start=0,end=0;
         while(start<target.length&&typed[start]===target[start])start++;
         while(end<target.length-start&&end<typed.length-start&&target.at(-end-1)===typed.at(-end-1))end++;
         const repair=target.slice(start,target.length-end);
         status.replaceChildren();node('span',word.slice(0,start),status);node('mark',repair,status);node('span',end?word.slice(-end):'',status);
-        const hint=target==='hopping'&&typed==='hoping'?'Double the p before ing.':repair?'Look at the highlighted letters.':'Look for an extra letter.';
+        const hint=irish&&repair.length===1&&'áéíóú'.includes(repair)&&typed[start]===repair.normalize('NFD')[0]?'Add a fada to the '+typed[start]+'.':target==='hopping'&&typed==='hoping'?'Double the p before ing.':repair?'Look at the highlighted letters.':'Look for an extra letter.';
         node('span',' · '+hint,status);learningSpeak(hint);input.focus();input.setSelectionRange(start,Math.max(start,typed.length-end));return;
       }
       if(ok&&!round.tried)(revisit?round.remembered:round.first).push(word);
@@ -422,11 +471,11 @@ function spellingRound(area,words,test,owner,observe,resume=false){
       input.disabled=true;
       const message=round.tried?'You fixed '+word+'!':revisit?'You remembered '+word+'!':'You got it!';
       round.index++;round.tried=false;round.preview=!round.test&&round.index<round.count;save();
-      if(round.test){show();return}
+      if(deferred){show();return}
       status.textContent=message;learningSpeak(message);
       setTimeout(()=>{if(card.isConnected)show()},900);
     }
-    const submit=btn('Check spelling',check,card,'primaryButton');input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check()}};
+    const submit=btn(deferred?'Next word':'Check spelling',check,card,'primaryButton');input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check()}};
     if(!round.test&&!revisit){
       slots=node('div',undefined,card,'spellTiles');tiles=node('div',undefined,card,'spellTiles');
       for(const letter of ETM_CORE.shuffle(Array.from(word)))btn(letter,()=>{if(input.disabled)return;const pos=input.selectionStart??input.value.length;input.setRangeText(letter,pos,input.selectionEnd??pos,'end');changed()},tiles,'mathTile');
