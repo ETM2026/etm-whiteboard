@@ -63,6 +63,15 @@ function learningPlayTogether(){
  var a=learningPage('Games & competitions','play');node('h2','Your turn. My turn. Everyone’s in.',a,'lSectionTitle');node('p','Choose a game and cheer each other on. Every game here works without AI.',a,'lIntro');
  var games=node('div',undefined,a,'lSubjectGrid');
  learningCard(games,'🤝','Play with a friend','Invite a friend for a game and chat',function(){window.ETMFriends.open()},'mint');
+ learningCard(games,'⚓','Killybegs fishing','Board Rachel D or Paula and sail from the quay',function(){
+   const dialog=node('dialog',undefined,document.body,'harbourGame');
+   dialog.setAttribute('aria-label','Killybegs fishing');
+   const back=btn('← Back to games',()=>dialog.close(),dialog,'quietButton');
+   const frame=node('iframe',undefined,dialog);
+   frame.title='Killybegs fishing fleet';
+   frame.src='games/killybegs/Killybegs_Harbour_Trial.html';
+   dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();back.focus();
+ },'blue');
  gameChoiceCard(games,'quiz','🏆','Family quiz','Play a quiz, make a question or open saved questions',learningQuizHome,'pink');
  gameChoiceCard(games,'pairs','🧠','Matching pairs','Team up or compete · one device or connected screens',matchingMenu,'lilac');
  gameChoiceCard(games,'three','❎','X and O’s','Three in a row · take turns together',function(){newGame('ttt')},'blue');
@@ -338,29 +347,36 @@ function stretchInvestigation(unit,today){
  reveal('Give me a clue',clue);reveal('Compare my thinking',reason);btn('Back to my experiment or map',back,panel,'primaryButton');
 }
 
-function spellingRoom(owner){
+function spellingRoom(owner,lang){
   if(!familyActor())return;
   owner=dadUnlocked()&&FAMILY.includes(owner)?owner:dadUnlocked()?'Emily':learningName();
-  const profile=ETM_CORE.profile(learningState,owner);
+  const child=ETM_CORE.profile(learningState,owner);
+  lang=lang||(child.spellingList?.language==='ga'?'ga':'en');
+  const profile=ETM_CORE.spellingBook(child,lang);
   const area=learningPage('My spellings','read',readRoom);
   if(dadUnlocked()){const select=learningSelect(area,'Spelling book',FAMILY.map(n=>[n,n]),owner);select.onchange=()=>spellingRoom(select.value)}
+  const tabs=node('div',undefined,area,'spellTiles');
+  for(const [code,title] of [['en','English'],['ga','Gaeilge']]){
+    const tab=btn(title,()=>spellingRoom(owner,code),tabs,code===lang?'primaryButton':'lPill');
+    tab.setAttribute('aria-pressed',String(code===lang));
+  }
   const list=profile.spellingList?.words||[];
   const editor=node('section',undefined,area,'spellCard');function edit(){
     editor.replaceChildren();node('h2','This week’s words',editor);
-    const language=learningSelect(editor,'List language',[['en','English'],['ga','Gaeilge']],profile.spellingList?.language||'en');
+
     const label=node('label','Type or paste your words, one per line.',editor),input=node('textarea',undefined,label);
     input.rows=8;input.value=list.join('\n');input.maxLength=3000;
     btn('Save '+owner+'’s words',()=>{const words=[...new Set(input.value.split(/[,;\n]+/).map(w=>w.trim().normalize('NFC')).filter(Boolean))];
       if(!words.length||words.length>50||words.some(w=>w.length>60)){notice('Use 1 to 50 words, up to 60 letters each.');return}
-      const current=ETM_CORE.profile(learningState,owner);current.spellingList={at:Date.now(),words,language:language.value,clips:(current.spellingList?.language===language.value?current.spellingList.clips||[]:[]).filter(c=>words.includes(c.word))};current.spellingRound={at:Date.now(),done:true};if(learningStore())spellingRoom(owner);else notice('Could not save your words on this device.');
+      const current=ETM_CORE.spellingBook(ETM_CORE.profile(learningState,owner),lang);current.spellingList={at:Date.now(),words,language:lang,clips:(current.spellingList?.language===lang?current.spellingList.clips||[]:[]).filter(c=>words.includes(c.word))};current.spellingRound={at:Date.now(),done:true};if(learningStore())spellingRoom(owner,lang);else notice('Could not save your words on this device.');
     },editor,'primaryButton');
   }
   if(!list.length){edit();return}
-  if(profile.spellingRound?.queue&&!profile.spellingRound.done)btn('Continue my round',()=>spellingRound(area,list,false,owner,null,true),editor,'primaryButton');
+  if(profile.spellingRound?.queue&&!profile.spellingRound.done)btn('Continue my round',()=>spellingRound(area,list,false,owner,null,true,lang),editor,'primaryButton');
   node('h2',owner+'’s weekly spellings',editor);
   const timing=learningSelect(editor,'When should ETM check my words?',[['each','After each word'],['end','At the end']],profileSettings(owner).spellingCheck||'each');
   timing.onchange=()=>setProfileSettings(owner,{spellingCheck:timing.value});
-  for(const [label,test] of [['Help me learn',false],['Test myself',true]])btn(label,()=>spellingRound(area,test?ETM_CORE.shuffle(list):ETM_CORE.shuffle(list).slice(0,5),test,owner),editor,'primaryButton');
+  for(const [label,test] of [['Help me learn',false],['Test myself',true]])btn(label,()=>spellingRound(area,test?ETM_CORE.shuffle(list):ETM_CORE.shuffle(list).slice(0,5),test,owner,null,false,lang),editor,'primaryButton');
   if(dadUnlocked()&&profile.spellingList?.language==='ga'&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder){
     const details=node('details',undefined,editor);node('summary','Record a pronunciation',details);
     const choice=learningSelect(details,'Choose a word',list.map(w=>[w,w]),list[0]);
@@ -382,7 +398,7 @@ function spellingRoom(owner){
           if(!blob.size||blob.size>96000){status.textContent='Try a shorter recording.';return}
           const reader=new FileReader();reader.onload=()=>{
             if(!details.isConnected||accessSession!==actor)return;
-            const book=ETM_CORE.profile(learningState,owner).spellingList;
+            const book=ETM_CORE.spellingBook(ETM_CORE.profile(learningState,owner),lang).spellingList;
             if(book.language!=='ga'||!book.words.includes(word))return;
             book.clips=[...(book.clips||[]).filter(c=>c.word!==word),{word,audio:reader.result}];book.at=Date.now();
             status.textContent=learningStore()?'Recording saved for '+word+'.':'Could not save this recording.';
@@ -393,12 +409,12 @@ function spellingRoom(owner){
       }catch{reset();status.textContent='Microphone unavailable. Emily can still look, cover and spell.'}
     },details,'lPill');
   }
-  btn('Spell with Dad',()=>window.ETMFriends.together(dadUnlocked()?owner:'Dad',true),editor,'lPill');
+  btn('Spell with Dad',()=>window.ETMFriends.together(dadUnlocked()?owner:'Dad',lang),editor,'lPill');
   btn('Edit weekly words',edit,editor,'quietButton');
   if(profile.spellingResult)node('p','Last round · '+profile.spellingResult.score,editor);
 }
-function spellingRound(area,words,test,owner,observe,resume=false){
-  const profile=()=>ETM_CORE.profile(learningState,owner);
+function spellingRound(area,words,test,owner,observe,resume=false,lang='en'){
+  const profile=()=>ETM_CORE.spellingBook(ETM_CORE.profile(learningState,owner),lang);
   const round=resume?profile().spellingRound:{
     timing:profileSettings(owner).spellingCheck||'each',language:profile().spellingList?.language||'en',test,queue:words.slice(),count:words.length,index:0,first:[],fixed:[],missed:[],remembered:[],tried:false,preview:!test
   };
@@ -416,8 +432,8 @@ function spellingRound(area,words,test,owner,observe,resume=false){
       for(const [label,set] of [['Got it first time',round.first],['Fixed it',round.fixed],['Remembered on your own',round.remembered]])if(set.length)node('p',label+' · '+set.join(', '),card);
       node('p',score,card);profile().spellingResult={score,at:Date.now()};save();observe?.(score);
       if(round.missed.length)node('p','Words to practise · '+round.missed.join(', '),card);
-      if(round.missed.length)btn('Practise missed words',()=>spellingRound(area,round.missed,false,owner,observe),card,'primaryButton');
-      btn('My spellings',()=>spellingRoom(owner),card,'lPill');return;
+      if(round.missed.length)btn('Practise missed words',()=>spellingRound(area,round.missed,false,owner,observe,false,lang),card,'primaryButton');
+      btn('My spellings',()=>spellingRoom(owner,lang),card,'lPill');return;
     }
     const revisit=round.index>=round.count;
     const heading=node('strong',revisit?'Remember it again':'Word '+(round.index+1)+' of '+round.count,card);window.etmMotif?.(heading,owner);
