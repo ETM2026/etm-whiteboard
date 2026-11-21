@@ -69,7 +69,7 @@ function learningPlayTogether(){
    const back=btn('← Back to games',()=>dialog.close(),dialog,'quietButton');
    const frame=node('iframe',undefined,dialog);
    frame.title='Killybegs fishing fleet';
-   frame.src='games/killybegs/Killybegs_Harbour_Trial.html';
+   frame.src='games/killybegs/Killybegs_Harbour_Trial.html?v=21.9';
    dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();back.focus();
  },'blue');
  gameChoiceCard(games,'quiz','🏆','Family quiz','Play a quiz, make a question or open saved questions',learningQuizHome,'pink');
@@ -347,6 +347,17 @@ function stretchInvestigation(unit,today){
  reveal('Give me a clue',clue);reveal('Compare my thinking',reason);btn('Back to my experiment or map',back,panel,'primaryButton');
 }
 
+function spellingFadaKeys(card,input,changed){
+      node('strong','Add a fada',card);
+      input.lang='ga';const keys=node('div',undefined,card,'spellTiles');
+      for(const letter of 'áéíóú'){
+        const key=btn(letter,()=>{if(input.disabled)return;let start=input.selectionStart,end=input.selectionEnd;
+          if(start===end&&start>0&&input.value[start-1].toLowerCase()===letter.normalize('NFD')[0])start--;
+          input.setRangeText(letter,start,end,'end');input.focus();changed?.()},keys,'mathTile');
+        key.onpointerdown=e=>e.preventDefault();
+      }
+    }
+
 function spellingRoom(owner,lang){
   if(!familyActor())return;
   owner=dadUnlocked()&&FAMILY.includes(owner)?owner:dadUnlocked()?'Emily':learningName();
@@ -366,6 +377,7 @@ function spellingRoom(owner,lang){
 
     const label=node('label','Type or paste your words, one per line.',editor),input=node('textarea',undefined,label);
     input.rows=8;input.value=list.join('\n');input.maxLength=3000;
+    if(lang==='ga')spellingFadaKeys(editor,input);
     btn('Save '+owner+'’s words',()=>{const words=[...new Set(input.value.split(/[,;\n]+/).map(w=>w.trim().normalize('NFC')).filter(Boolean))];
       if(!words.length||words.length>50||words.some(w=>w.length>60)){notice('Use 1 to 50 words, up to 60 letters each.');return}
       const current=ETM_CORE.spellingBook(ETM_CORE.profile(learningState,owner),lang);current.spellingList={at:Date.now(),words,language:lang,clips:(current.spellingList?.language===lang?current.spellingList.clips||[]:[]).filter(c=>words.includes(c.word))};current.spellingRound={at:Date.now(),done:true};if(learningStore())spellingRoom(owner,lang);else notice('Could not save your words on this device.');
@@ -459,15 +471,7 @@ function spellingRound(area,words,test,owner,observe,resume=false,lang='en'){
       for(const b of tiles.children){const n=used.get(b.textContent)||0;b.disabled=n>0;if(n)used.set(b.textContent,n-1)}
     }
     function changed(){tilesPaint();report()}
-    if(irish){
-      input.lang='ga';const keys=node('div',undefined,card,'spellTiles');
-      for(const letter of 'áéíóú'){
-        const key=btn(letter,()=>{if(input.disabled)return;let start=input.selectionStart,end=input.selectionEnd;
-          if(start===end&&start>0&&input.value[start-1].toLowerCase()===letter.normalize('NFD')[0])start--;
-          input.setRangeText(letter,start,end,'end');input.focus();changed()},keys,'mathTile');
-        key.onpointerdown=e=>e.preventDefault();
-      }
-    }
+    if(irish)spellingFadaKeys(card,input,changed);
     input.oninput=changed;report();
     function check(){
       const typed=input.value.trim().normalize('NFC').toLowerCase(),target=word.toLowerCase();if(!typed||input.disabled)return;
