@@ -17,6 +17,18 @@ function learningSpeak(text,lang){if(window.speechSynthesis&&typeof SpeechSynthe
 function learningPage(title,key,back){if(typeof tutorRefreshIdentity==='function')tutorRefreshIdentity();stopCoach();if(window.speechSynthesis)window.speechSynthesis.cancel();setRoom(key||'learn',title,back||home);var a=shell(title,'');a.classList.add('learningV2');if(typeof pl!=='undefined'&&pl&&!pl.guest)window.etmMotif?.(club.querySelector('.pageHeading h1'),pl.n);return a}
 function learningCard(parent,icon,title,copy,fn,tint){var b=btn('',fn,parent,'lCard '+(tint||''));node('span',icon,b,'lCardIcon');var c=node('span',undefined,b,'lCardCopy');node('strong',title,c);node('small',copy,c);node('span','↗',b,'lCardArrow');return b}
 function learningSelect(a,label,options,value){var l=node('label',undefined,a,'lField');node('span',label,l);var select=node('select',undefined,l);options.forEach(function(x){var o=node('option',x[1],select);o.value=x[0]});select.value=String(value===undefined?options[0][0]:value);return select}
+function mathsRecommendation(p,name){
+ const kinds=name==='Matthew'?['count','bonds']:name==='Tommy'?['bonds','groups','exchange','balance','fractions']:['exchange','groups','fractions','balance','bonds'];
+ const today=new Date().toDateString();
+ const history=k=>p.events.filter(e=>e.unit==='discovery:'+k).sort((a,b)=>b.at-a.at);
+ for(const k of kinds){
+   const rows=history(k),last=rows[0];
+   if(last&&new Date(last.at).toDateString()!==today&&rows.filter(e=>new Date(e.at).toDateString()===new Date(last.at).toDateString()).some(e=>e.helped||!e.correct))
+     return {kind:k,reason:'There was a tricky step last time. Try a fresh question on your own.'};
+ }
+ const fresh=kinds.find(k=>!history(k).length);
+ return {kind:fresh||ETM_DISCOVERY.choose(p,name),reason:fresh?'A skill to try for the first time.':'Chosen from your practice and skills due for another turn.'};
+}
 function learningHome(){
  stopCoach();mathsBoardView=false;closePrivate();var name=learningName(),p=learningProfile(),a=learningPage('Let’s discover something.','home');club.querySelector('.roomBreadcrumb').hidden=true;
  var heading=club.querySelector('.pageHeading h1');if(heading)heading.textContent='Hello, '+(pl&&pl.guest?name.replace(/^Guest · /,''):name)+'.';
@@ -25,14 +37,16 @@ function learningHome(){
    window.etmMotif?.(heading,name);const prompt=node('div',undefined,a,'playHeading');
    node('h2','What shall we play?',prompt);
    const recent=name==='Emily'?(pieceStore()[name]||[]).filter(p=>p.lastPlayed).sort((x,y)=>y.lastPlayed-x.lastPlayed)[0]:null;
-   const pairs=()=>launch('memory',{});
+   const nextMath=mathsRecommendation(p,name); const pairs=()=>launch('memory',{});
    const choices=name==='Matthew'?[
      ['🔎','Find a picture',()=>launch('detective')],['✏️','Draw a wish',async()=>{const actor=accessSession;await santaRoom();if(actor===accessSession&&santaView?.record&&santaView.container.isConnected)santaDrawing({title:'',kind:'draw',icon:'gift',note:'',url:'',photo:''},null)}],['🃏','Match the pairs',pairs]
    ]:name==='Tommy'?[
      ['📖','Read a word',()=>launch('read')],['🃏','Match the pairs',pairs],['🏁','Play with a friend',()=>window.ETMFriends.open()]
    ]:[
-     ['🎹',recent?'Continue '+recent.title:'Find the note',recent?()=>openCoach(recent):()=>musicSolo('note')],['🔢','Try a maths challenge',()=>discoveryStart('exchange','challenge')],['🏁','Race a friend',()=>window.ETMFriends.rally('add',2)]
+     ['🎹',recent?'Continue '+recent.title:'Find the note',recent?()=>openCoach(recent):()=>musicSolo('note')],['🔢',ETM_DISCOVERY.skills[nextMath.kind].title,()=>discoveryStart(nextMath.kind,'challenge')],['🏁','Race a friend',()=>window.ETMFriends.rally('add',2)]
    ];
+   if(name==='Matthew'&&profileSettings(name).spokenChoices!==false&&window.speechSynthesis)learningSpeak('Pick a picture. Find something, draw a wish, or match the cards.');
+   if(name==='Matthew'&&window.speechSynthesis){const sound=btn(profileSettings(name).spokenChoices===false?'Turn spoken welcome on':'Mute spoken welcome',()=>{const enabled=profileSettings(name).spokenChoices===false;setProfileSettings(name,{spokenChoices:enabled});if(!enabled)window.speechSynthesis.cancel();sound.textContent=enabled?'Mute spoken welcome':'Turn spoken welcome on'},prompt,'quietButton')}
    btn('🔊 Hear my choices',()=>learningSpeak(choices.map(c=>c[1]).join('. ')),prompt,'quietButton');
    const play=node('div',undefined,a,'childChoices');
    for(const [symbol,label,action] of choices){
@@ -69,7 +83,7 @@ function learningPlayTogether(){
    const back=btn('← Back to games',()=>dialog.close(),dialog,'quietButton');
    const frame=node('iframe',undefined,dialog);
    frame.title='Killybegs fishing fleet';
-   frame.src='games/killybegs/Killybegs_Harbour_Trial.html?v=21.9';
+   frame.src='games/killybegs/Killybegs_Harbour_Trial.html?v=rev28';
    dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();back.focus();
  },'blue');
  gameChoiceCard(games,'quiz','🏆','Family quiz','Play a quiz, make a question or open saved questions',learningQuizHome,'pink');
@@ -196,6 +210,7 @@ function learningProgress(name){
  var own=learningName();name=dadUnlocked()&&FAMILY.concat('Dad').includes(name)?name:own;var guest=!!(pl&&pl.guest),a=learningPage(guest?'This visit':name==='Dad'?'My progress':name+'’s progress','progress'),p=guest?learningProfile():ETM_CORE.profile(learningState,name);
  if(dadUnlocked()){var people=node('div',undefined,a,'lQuickLinks');FAMILY.concat('Dad').forEach(function(n){var b=btn(n,function(){learningProgress(n)},people,'quietButton');b.setAttribute('aria-pressed',n===name)})}
  node('p','One place for your learning. Practice, game scores and AI reviews stay labelled separately.',a,'lIntro');
+ if(dadUnlocked()&&FAMILY.includes(name)){const next=mathsRecommendation(p,name);node('p','Next maths · '+ETM_DISCOVERY.skills[next.kind].title+'. '+next.reason,a);for(const lang of ['en','ga']){const review=ETM_CORE.spellingBook(p,lang).review||[];if(review.length)node('p',(lang==='ga'?'Gaeilge':'English')+' · Still practising: '+(review.filter(r=>!r.ok).map(r=>r.word).join(', ')||'none')+'. Remembered independently: '+(review.filter(r=>r.ok).map(r=>r.word).join(', ')||'none'),a)}}
  var total=p.events.length,ind=p.events.filter(function(e){return e.correct&&!e.helped}).length,help=p.events.filter(function(e){return e.helped}).length,stats=node('div',undefined,a,'lProgressStats');[[total,'Practice answers'],[ind,'Independent correct'],[help,'Used help']].forEach(function(x){var c=node('div',undefined,stats);node('strong',String(x[0]),c);node('span',x[1],c)});
  node('h2','Your learning trail',a,'lPlayHeading');var grid=node('div',undefined,a,'lSubjectGrid'),units=ETM_DATA.units.concat(['add','sub','mixed','count','divide','bonds','fractions','clock','money','shape','place','times'].map(function(t){return {id:'math-'+t,title:({add:'Addition',sub:'Subtraction',mixed:'Mixed sums',count:'Counting',divide:'Division',bonds:'Number bonds',fractions:'Fractions',clock:'Time',money:'Money',shape:'Shapes',place:'Place value',times:'Multiplication'})[t],icon:'🔢',topic:t}}));
  units.forEach(function(u){var rows=p.events.filter(function(e){return e.unit===u.id});if(!rows.length)return;var last=rows[rows.length-1],summary=ETM_CORE.summary(p,u.id,last.level);learningCard(grid,u.icon,u.title,summary.secure?'Ready for a new challenge':summary.due?'Ready to revisit':summary.independent+' independent answers · '+summary.helped+' used help',function(){if(name!==learningName()){notice('Open '+name+'’s profile to practise.');return}u.topic?learningStartMath(u.topic):learningLesson(u)},'mint')});if(!total)node('p','Your trail begins with your first little adventure.',a,'lEmpty');
@@ -427,8 +442,10 @@ function spellingRoom(owner,lang){
 }
 function spellingRound(area,words,test,owner,observe,resume=false,lang='en'){
   const profile=()=>ETM_CORE.spellingBook(ETM_CORE.profile(learningState,owner),lang);
+  const due=resume||observe||test?[]:(profile().review||[]).filter(r=>!r.ok&&new Date(r.at).toDateString()!==new Date().toDateString()).sort((a,b)=>a.at-b.at).slice(0,2).map(r=>r.word);
+  words=[...new Set([...due,...words])];
   const round=resume?profile().spellingRound:{
-    timing:profileSettings(owner).spellingCheck||'each',language:profile().spellingList?.language||'en',test,queue:words.slice(),count:words.length,index:0,first:[],fixed:[],missed:[],remembered:[],tried:false,preview:!test
+    review:due,timing:profileSettings(owner).spellingCheck||'each',language:profile().spellingList?.language||'en',test,queue:words.slice(),count:words.length,index:0,first:[],fixed:[],missed:[],remembered:[],tried:false,preview:!test
   };
   const deferred=(round.timing||(round.test?'end':'each'))==='end';
   function save(){
@@ -447,14 +464,14 @@ function spellingRound(area,words,test,owner,observe,resume=false,lang='en'){
       if(round.missed.length)btn('Practise missed words',()=>spellingRound(area,round.missed,false,owner,observe,false,lang),card,'primaryButton');
       btn('My spellings',()=>spellingRoom(owner,lang),card,'lPill');return;
     }
-    const revisit=round.index>=round.count;
-    const heading=node('strong',revisit?'Remember it again':'Word '+(round.index+1)+' of '+round.count,card);window.etmMotif?.(heading,owner);
+    const revisit=round.index>=round.count,recall=!revisit&&round.review?.includes(word);
+    const heading=node('strong',recall?'Remember from last time':revisit?'Remember it again':'Word '+(round.index+1)+' of '+round.count,card);window.etmMotif?.(heading,owner);
     const irish=round.language==='ga';
     const clip=irish&&profile().spellingList?.clips?.find(c=>c.word===word&&/^data:audio\//.test(c.audio));
-    const hasVoice=clip||!irish||window.speechSynthesis?.getVoices().some(v=>/^ga(?:-|$)/i.test(v.lang));
-    const hear=()=>clip?new Audio(clip.audio).play().catch(()=>{if(card.isConnected&&!card.querySelector('.audioWord'))node('strong',word,card,'audioWord')}):learningSpeak(word.toLowerCase()==='hopping'?'Hopping. The rabbit is hopping over the log.':word,irish?'ga-IE':'en-IE');
+    const hasVoice=clip||window.speechSynthesis&&(!irish||window.speechSynthesis.getVoices().some(v=>/^ga(?:-|$)/i.test(v.lang)));
+    const hear=()=>clip?new Audio(clip.audio).play().catch(()=>{if(card.isConnected&&!card.querySelector('.audioWord')){round.covered=round.index;node('strong',word,card,'audioWord')}}):learningSpeak(word.toLowerCase()==='hopping'?'Hopping. The rabbit is hopping over the log.':word,irish?'ga-IE':'en-IE');
     if(hasVoice){btn('Hear the word',hear,card,'lPill');hear();}
-    if(round.preview||(irish&&!hasVoice&&round.covered!==round.index)){node('h2',word,card);btn('Ready to spell',()=>{round.preview=false;round.covered=round.index;save();show()},card,'primaryButton');return}
+    if((!recall&&round.preview)||(!hasVoice&&round.covered!==round.index)){node('h2',word,card);btn('Ready to spell',()=>{round.preview=false;round.covered=round.index;save();show()},card,'primaryButton');return}
     const label=node('label','Spell the word',card),input=node('input',undefined,label);
     input.maxLength=60;input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');
     const report=()=>observe?.('Word '+(round.index+1)+' · '+word+' → '+input.value);
@@ -476,6 +493,9 @@ function spellingRound(area,words,test,owner,observe,resume=false,lang='en'){
     function check(){
       const typed=input.value.trim().normalize('NFC').toLowerCase(),target=word.toLowerCase();if(!typed||input.disabled)return;
       const ok=typed===target;
+      if(!observe&&(!ok||(recall&&ok&&!round.tried&&hasVoice&&round.covered!==round.index))){
+        const book=profile();book.review=(book.review||[]).filter(r=>r.word!==word);book.review.push({word,at:Date.now(),ok});
+      }
       if(!ok&&!round.missed.includes(word))round.missed.push(word);
       if(!ok&&!deferred){
         round.tried=true;save();let start=0,end=0;
@@ -496,7 +516,7 @@ function spellingRound(area,words,test,owner,observe,resume=false,lang='en'){
       setTimeout(()=>{if(card.isConnected)show()},900);
     }
     const submit=btn(deferred?'Next word':'Check spelling',check,card,'primaryButton');input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check()}};
-    if(!round.test&&!revisit){
+    if(!round.test&&!revisit&&!recall){
       slots=node('div',undefined,card,'spellTiles');tiles=node('div',undefined,card,'spellTiles');
       for(const letter of ETM_CORE.shuffle(Array.from(word)))btn(letter,()=>{if(input.disabled)return;const pos=input.selectionStart??input.value.length;input.setRangeText(letter,pos,input.selectionEnd??pos,'end');changed()},tiles,'mathTile');
     }

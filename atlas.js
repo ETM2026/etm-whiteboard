@@ -145,6 +145,29 @@ function regionalMap(kind,parent,quiz){
  const tabs=quiz?null:node('div',undefined,box,'atlasTabs');
  const river=svgEl('g',{'pointer-events':'none'},svg);
  let riverChoice=null;
+ if(!quiz&&kind==='ireland'){
+   const start=()=>{
+     river.replaceChildren();highlight('');
+     const level=learningName()==='Matthew'?0:learningName()==='Tommy'?1:2;
+     function finish(){riverChoice=null;caption.show('Home in Donegal',level?'You followed the coast from Killybegs to Donegal Town.':'You found Killybegs Harbour!');btn('Sail again',start,caption.challenge,'primaryButton')}
+     function find(place,prompt,then){
+       caption.show('Harbour explorer',prompt);
+       riverChoice=name=>{
+         if(name!==place){caption.show('Try another pin',prompt);return}
+         highlight(name);riverChoice=null;then();
+       };
+     }
+     find('Killybegs','Tap Killybegs, your home harbour.',()=>{if(!level){finish();return}
+       find('Donegal Town','From Killybegs, follow the coast east. Tap Donegal Town.',()=>{
+         if(level===1){finish();return}
+         caption.show('Sail home','North is up. Which way is Killybegs from here?');
+         for(const dir of ['East','West'])btn(dir,()=>{if(dir==='East'){caption.fact.textContent='East takes you farther inland. Look towards the Atlantic.';return}
+           find('Killybegs','West is right! Tap your home harbour to finish.',finish);
+         },caption.challenge,'lPill');
+       });
+     });
+   };btn('⚓ Sail from Killybegs',start,box,'primaryButton');
+ }
  const predictions={
    Killybegs:['Your boat leaves Killybegs Harbour. Which bay are you sailing into?','Donegal Bay','Galway Bay','Look for the bay named after the county.'],
    'Donegal Town':['Use the north arrow. Which direction is Killybegs from Donegal Town?','West','East','West is to the left on this map.'],
