@@ -83,7 +83,7 @@ function learningPlayTogether(){
    const back=btn('← Back to games',()=>dialog.close(),dialog,'quietButton');
    const frame=node('iframe',undefined,dialog);
    frame.title='Killybegs fishing fleet';
-   frame.src='games/killybegs/Killybegs_Harbour_Trial.html?v=rev28-watch';
+   frame.src='games/killybegs/Killybegs_Harbour_Trial.html?v=rev29-watch';
    dialog.addEventListener('close',()=>{window.ETMScreen?.closeFishing(dialog);dialog.remove()},{once:true});dialog.showModal();back.focus();
  },'blue');
  gameChoiceCard(games,'quiz','🏆','Family quiz','Play a quiz, make a question or open saved questions',learningQuizHome,'pink');
