@@ -1956,12 +1956,55 @@ window.startFishingView=function(){
   const surface=document.createElement('canvas');
   surface.width=854;surface.height=480;
   const brush=surface.getContext('2d'),stream=surface.captureStream(12);
-  fishingView={surface,brush,stream,next:0};return stream;
+  const controls=document.querySelectorAll('button,select,output,#littleStick,#littleKnob');
+  fishingView={surface,brush,stream,controls,next:0};return stream;
 };
 window.stopFishingView=function(){
   if(fishingView)fishingView.stream.getTracks().forEach(track=>track.stop());
   fishingView=null;
 };
+function drawFishingControls(view,x,y,w,h){
+  const ctx=view.brush;
+  ctx.save();
+  try{
+    ctx.translate(x,y);
+    ctx.scale(w/innerWidth,h/innerHeight);
+    for(const el of view.controls){
+      const r=el.getBoundingClientRect();
+      if(!r.width||!r.height)continue;
+      const cx=r.left+r.width/2,cy=r.top+r.height/2;
+      if(!el.contains(document.elementFromPoint(cx,cy))&&el.id!=='littleKnob'&&el.tagName!=='OUTPUT')continue;
+      if(el.id==='littleKnob'&&!el.parentElement.contains(document.elementFromPoint(cx,cy)))continue;
+      const css=getComputedStyle(el);
+      if(css.visibility!=='visible'||css.opacity==='0')continue;
+      const joystick=el.id==='littleStick'||el.id==='littleKnob';
+      const active=el.matches(':active,[aria-pressed="true"],.active,.selected');
+      ctx.beginPath();
+      if(joystick)ctx.ellipse(cx,cy,r.width/2,r.height/2,0,0,2*Math.PI);
+      else if(ctx.roundRect)ctx.roundRect(r.left,r.top,r.width,r.height,Math.min(9,r.height/3));
+      else ctx.rect(r.left,r.top,r.width,r.height);
+      ctx.fillStyle=el.id==='littleKnob'?'#e6f5f1':active?'#146a62':'#173642ed';
+      ctx.fill();ctx.lineWidth=active?3:1.5;ctx.strokeStyle=active?'#ffdc79':'#c5dfda';ctx.stroke();
+      if(el.id==='littleKnob')continue;
+      ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+      if(el.id==='littleStick'){
+        ctx.font='bold 16px sans-serif';
+        for(const [label,dx,dy] of [['▲',0,-1],['▼',0,1],['◀',-1,0],['▶',1,0]])ctx.fillText(label,cx+dx*(r.width/2-12),cy+dy*(r.height/2-12));
+        continue;
+      }
+      const image=el.querySelector('img');
+      if(image?.complete&&image.naturalWidth){
+        const ir=image.getBoundingClientRect();if(ir.width&&ir.height)ctx.drawImage(image,ir.left,ir.top,ir.width,ir.height);
+      }
+      const caption=el.querySelector('small')?.textContent.trim();
+      const text=(el.tagName==='SELECT'?el.selectedOptions[0]?.textContent:el.innerText)?.trim()||el.getAttribute('aria-label')||'';
+      const main=(caption&&text.endsWith(caption)?text.slice(0,-caption.length):text).trim();
+      ctx.font='bold '+Math.min(30,Math.max(12,parseFloat(css.fontSize)||16))+'px sans-serif';
+      if(main)ctx.fillText(main,cx,image? r.bottom-10:cy-(caption?7:0),Math.max(1,r.width-5));
+      if(caption){ctx.font='bold 12px sans-serif';ctx.fillText(caption,cx,cy+13,Math.max(1,r.width-4))}
+    }
+  }finally{ctx.restore()}
+}
 function drawFishingView(ms){
   const view=fishingView;if(!view||ms<view.next)return;
   view.next=ms+80;
@@ -1972,6 +2015,7 @@ function drawFishingView(ms){
   view.brush.fillStyle='#152b30';view.brush.fillRect(0,0,854,480);
   view.brush.drawImage(scene,x,y,w,h);
   if(overlay.width&&overlay.height)view.brush.drawImage(overlay,x,y,w,h);
+  drawFishingControls(view,x,y,w,h);
 }
 function frame(ms){let dt=previous?Math.min(.067,(ms-previous)/1000):0;previous=ms;if(!$('skipperMenu').hidden){pending=0;}else if(travel&&!document.hidden){travel.elapsed+=dt;if(travel.elapsed>=6)endPassage();else {drawPassage();drawFishingView(ms);requestAnimationFrame(frame);return;}}else if(!weatherOpen&&!logOpen&&!document.hidden&&!sim.paused&&$('dialog').hidden){const look=(keys.has('KeyE')?1:0)-(keys.has('KeyQ')?1:0);if(look){if(foot.mode!=='helm')foot.angle+=dt*look;else if(sim.view==='bridge')sim.look=clamp(sim.look+dt*look,-1.13,1.13);else sim.orbit+=dt*look;}pending+=dt*(sim.fast?3:1);while(pending>=1/60){physics(1/60);pending-=1/60;if(logOpen){pending=0;break;}}}hud();rigHud();littleHud();updateEngineSound();render();drawFishingView(ms);requestAnimationFrame(frame);}
 function releaseInputs(){keys.clear();foot.forward=0;foot.side=0;pressed=null;drag=null;pending=0;}
