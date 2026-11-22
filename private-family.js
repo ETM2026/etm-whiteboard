@@ -330,4 +330,9 @@ function chime(){
 document.addEventListener('pointerdown',()=>{try{chatTone||=new (window.AudioContext||window.webkitAudioContext)();if(chatTone.state==='suspended')chatTone.resume().catch(()=>{})}catch{}});
 window.addEventListener('pagehide',()=>endCall());
 setInterval(()=>{if(activeCall&&!current(activeCall))endCall('',false)},500);
-window.ETMPrivate={inCall:()=>!!activeCall,receive,controls,chatControls,transmit,recipient,select:selectRecipient,chime,stop:endCall};
+function talkWhileFishing(id){
+  if(activeCall)return;
+  const dad=allowedDevices().find(m=>m.id===id&&m.authRole==='dad'&&m.name==='Dad');
+  if(dad)newCall(dad,crypto.randomUUID(),false,true);
+}
+window.ETMPrivate={talkWhileFishing,canTalkTo:id=>!activeCall||activeCall.other.id===id,inCall:()=>!!activeCall,receive,controls,chatControls,transmit,recipient,select:selectRecipient,chime,stop:endCall};

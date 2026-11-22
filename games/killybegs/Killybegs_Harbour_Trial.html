@@ -1743,7 +1743,30 @@ function littleSetup(){
  addEventListener('blur',littleRelease);document.addEventListener('visibilitychange',()=>{if(document.hidden)littleRelease()});littleHud();
 }
 
-let previous=0;function frame(ms){let dt=previous?Math.min(.067,(ms-previous)/1000):0;previous=ms;if(!$('skipperMenu').hidden){pending=0;}else if(travel&&!document.hidden){travel.elapsed+=dt;if(travel.elapsed>=6)endPassage();else {drawPassage();requestAnimationFrame(frame);return;}}else if(!weatherOpen&&!logOpen&&!document.hidden&&!sim.paused&&$('dialog').hidden){const look=(keys.has('KeyE')?1:0)-(keys.has('KeyQ')?1:0);if(look){if(foot.mode!=='helm')foot.angle+=dt*look;else if(sim.view==='bridge')sim.look=clamp(sim.look+dt*look,-1.13,1.13);else sim.orbit+=dt*look;}pending+=dt*(sim.fast?3:1);while(pending>=1/60){physics(1/60);pending-=1/60;if(logOpen){pending=0;break;}}}hud();rigHud();littleHud();updateEngineSound();render();requestAnimationFrame(frame);}
+let previous=0;let fishingView=null;
+window.startFishingView=function(){
+  window.stopFishingView();
+  const surface=document.createElement('canvas');
+  surface.width=854;surface.height=480;
+  const brush=surface.getContext('2d'),stream=surface.captureStream(12);
+  fishingView={surface,brush,stream,next:0};return stream;
+};
+window.stopFishingView=function(){
+  if(fishingView)fishingView.stream.getTracks().forEach(track=>track.stop());
+  fishingView=null;
+};
+function drawFishingView(ms){
+  const view=fishingView;if(!view||ms<view.next)return;
+  view.next=ms+80;
+  const scene=document.getElementById('scene'),overlay=document.getElementById('overlay');
+  if(!scene.width||!scene.height)return;
+  const scale=Math.min(view.surface.width/scene.width,view.surface.height/scene.height);
+  const w=scene.width*scale,h=scene.height*scale,x=(view.surface.width-w)/2,y=(view.surface.height-h)/2;
+  view.brush.fillStyle='#152b30';view.brush.fillRect(0,0,854,480);
+  view.brush.drawImage(scene,x,y,w,h);
+  if(overlay.width&&overlay.height)view.brush.drawImage(overlay,x,y,w,h);
+}
+function frame(ms){let dt=previous?Math.min(.067,(ms-previous)/1000):0;previous=ms;if(!$('skipperMenu').hidden){pending=0;}else if(travel&&!document.hidden){travel.elapsed+=dt;if(travel.elapsed>=6)endPassage();else {drawPassage();drawFishingView(ms);requestAnimationFrame(frame);return;}}else if(!weatherOpen&&!logOpen&&!document.hidden&&!sim.paused&&$('dialog').hidden){const look=(keys.has('KeyE')?1:0)-(keys.has('KeyQ')?1:0);if(look){if(foot.mode!=='helm')foot.angle+=dt*look;else if(sim.view==='bridge')sim.look=clamp(sim.look+dt*look,-1.13,1.13);else sim.orbit+=dt*look;}pending+=dt*(sim.fast?3:1);while(pending>=1/60){physics(1/60);pending-=1/60;if(logOpen){pending=0;break;}}}hud();rigHud();littleHud();updateEngineSound();render();drawFishingView(ms);requestAnimationFrame(frame);}
 function releaseInputs(){keys.clear();foot.forward=0;foot.side=0;pressed=null;drag=null;pending=0;}
 addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs();});
 wireDeck();wireWeather();weatherTick(0,true);prepare().then(()=>{ready=true;leaveHelm();littleSetup();hud();rigHud();requestAnimationFrame(frame);}).catch(e=>{if(gl&&!new URLSearchParams(location.search).has('software')){const fallback=new URL(location.href);fallback.searchParams.set('software','1');location.replace(fallback.href);return;}dialog(true);$('dialogtitle').textContent='Graphics setup';$('notes').textContent=e.message;$('close').hidden=true;$('restart').hidden=true;console.error(e);});
