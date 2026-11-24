@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rev 45 · Killybegs fishing fleet</title><style>
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rev 47 · Killybegs fishing fleet</title><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#152b30;color:#fcf9ec;font-family:"Segoe UI",Arial,sans-serif}#scene,#overlay{position:absolute;inset:0;width:100%;height:100%;display:block}#overlay{pointer-events:none}.top{position:absolute;top:20px;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}.brand,.tools,.mission,.telemetry,.controls,.hint{border:1px solid #eff7e538;background:rgba(15,36,40,.9);box-shadow:0 3px 16px #091c2322}.brand{display:flex;align-items:center;gap:12px;padding:9px 15px 9px 11px;border-radius:5px}.emblem{width:32px;height:35px;border:1px solid #c6cfaf79;display:grid;place-items:center;color:#eacb87;font-family:Georgia,serif;font-size:25px}.eyebrow,.caption,small,.tools button{font-family:Consolas,"Courier New",monospace;letter-spacing:.14em;font-weight:bold;font-size:10px}.eyebrow{color:#d8c399}.brand strong{font-family:Georgia,serif;font-size:20px;letter-spacing:.015em;font-weight:normal;display:block;margin-top:1px}.tools{display:flex;border-radius:5px;overflow:hidden;align-items:center;pointer-events:auto}.tools button,.controls button{background:none;color:#e6eee2;border:0;cursor:pointer}.tools button{padding:11px 13px;font-size:10px;letter-spacing:.06em}.tools button+button{border-left:1px solid #c5d7cd39}.tools button.on,.tools button:hover,.controls button:hover{color:#f9d79a;background:#cdd4b31e}.mission{position:absolute;left:24px;bottom:51px;padding:14px 18px 13px 17px;width:300px;border-radius:4px;border-left:3px solid #d7ae67}.mission h2{font-family:Georgia,serif;font-size:23px;margin:4px 0 6px;font-weight:normal}.mission p{font-size:12px;line-height:1.45;color:#dee4da;margin:0}.telemetry{position:absolute;right:24px;bottom:51px;display:flex;padding:11px 14px;gap:17px;border-radius:4px}.telemetry span{display:block;font-size:23px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.telemetry small,.caption{color:#c7d6c9;font-size:9px;letter-spacing:.085em}.controls{display:flex;position:absolute;bottom:0;left:0;right:0;align-items:center;justify-content:center;gap:22px;height:35px;border-width:1px 0 0;background:#14292cf5;font-size:11px;color:#d3e2d9}.controls kbd{font-family:Consolas,monospace;color:#f1dbad}.controls button{font-size:11px;padding:5px}.bridge .telemetry{display:none}.bridge .mission{left:24px;bottom:auto;top:93px;width:255px;padding:10px 13px}.bridge .mission h2{font-size:18px}.bridge .mission p{font-size:11px}.hint{position:absolute;left:50%;top:15%;transform:translateX(-50%);padding:10px 16px;border-radius:4px;text-align:center;display:none}.modal{position:absolute;inset:0;background:#0d2229aa;display:grid;place-items:center;z-index:5}.sheet{max-width:475px;background:#19363a;padding:31px;border:1px solid #93a395;border-radius:7px;box-shadow:0 20px 60px #001a}.sheet h1{font:32px Georgia,serif;margin:8px 0 14px}.sheet p{line-height:1.55;font-size:14px}.sheet button{font:600 14px "Segoe UI",sans-serif;background:#e7c48a;color:#1d3634;border:0;border-radius:3px;padding:10px 15px;cursor:pointer}button:focus-visible{outline:2px solid #f7d588;outline-offset:-2px}[hidden]{display:none!important}@media(max-width:850px){.top{left:12px;right:12px;top:12px}.controls{gap:8px}.telemetry{right:12px;gap:10px}.mission{left:12px;width:250px}.brand strong{font-size:17px}}
 .loading{position:absolute;right:24px;top:78px;width:201px;border:1px solid #a6beb746;border-radius:4px;background:#112c30ee;padding:11px 14px;color:#efeadd}.cargo,.draft{display:flex;align-items:baseline;justify-content:space-between}.cargo small{color:#a9c7bc}.cargo strong,.draft b{font:600 14px Consolas,monospace}.track{height:4px;background:#45605c;margin:7px 0}.track i{display:block;height:100%;width:0;background:#dbb679}.draft{font-size:11px;color:#c7d3c7}.practice{margin-top:16px;border-top:1px solid #637d77;padding-top:14px;display:flex;gap:8px;align-items:center}.practice label{font-size:12px}.practice select{padding:6px}.practice button{font-size:12px}.sheet{max-height:95vh;overflow:auto}.tools button{padding-inline:10px}@media(max-width:850px){.loading{right:12px;top:67px;width:174px}.tools button{padding:9px 6px}.brand strong{font-size:15px}} .bridge .mission{top:auto;bottom:49px;width:268px} #units{display:none}.bridge #units{display:block}#instruments{position:absolute;right:24px;bottom:48px;width:min(480px,52vw);z-index:3;border:1px solid #92a8a0;background:#10272b;border-radius:5px;box-shadow:0 9px 32px #07161277;overflow:hidden}.unitHead{display:flex;align-items:center;gap:8px;padding:6px 9px}.unitHead select,.unitHead button{color:#e4e9d9;background:#213e41;border:1px solid #526e69;border-radius:3px;padding:4px 9px;font:13px "Segoe UI",sans-serif;cursor:pointer}.unitHead select{flex:1}.unitHead button:disabled{opacity:.35}#instrumentFace{width:100%;height:auto;display:block}#scene{touch-action:none} #crewActions{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}#crewActions button,.crewbtn,#tickets button{background:#294d50;color:#fff0d4;border:1px solid #748d82;border-radius:4px;padding:6px 8px;cursor:pointer;font-weight:600}#crewActions button:disabled{opacity:.65}#crewTarget{display:block;color:#edcf90;font:600 12px Consolas,monospace;margin-top:8px}.sheet label{display:block;margin:10px 0 5px}.sheet input,.sheet select{border-radius:4px;padding:8px;max-width:100%}.sheet .minor{background:#355557;color:#e6ebda}.crewSetup,.ticket{border-top:1px solid #687c73;margin:14px 0;padding-top:12px}.ticket img{width:100%;border-radius:3px}.ticket strong,.ticket div{display:block;margin-top:7px}.ticket div{font-size:13px;color:#cddbc9}#tickets{max-height:55vh;overflow:auto}#voyageChart{display:block;width:100%;height:auto;margin-bottom:12px}#crewActions:has(>button:not([hidden])){margin-top:8px}#crewActions:not(:has(>button:not([hidden]))){display:none}.tools{flex-wrap:wrap;justify-content:flex-end}.sheet{min-width:min(390px,94vw)}.crewSetup h2{font:22px Georgia,serif}.hint{pointer-events:none;z-index:4}@media(max-height:580px){.mission,.bridge .mission{width:260px;bottom:40px;padding:7px 10px}.mission h2,.bridge .mission h2{font-size:16px}.brand{display:none}.tools{margin-left:auto}}  #boatPicker{display:flex;align-items:center;gap:9px;color:#ddcfac;font-size:12px;padding-bottom:7px}#boatSelect{border:1px solid #6a8781;background:#213f43;color:#f6efdb;padding:4px 7px;border-radius:3px} .wx{position:absolute;z-index:12;top:70px;right:18px;width:min(345px,94vw);max-height:calc(100% - 86px);overflow:auto;background:#122d33f5;border:1px solid #759591;padding:18px;border-radius:9px;color:#f2f5ee}.wx[hidden]{display:none}.wx header{display:flex;align-items:center;justify-content:space-between}.wx h2{margin:0;font:24px Georgia,serif}.wx label{display:block;margin-top:14px;font-size:13px;color:#dbe8e4}.wx select,.wx input{display:block;width:100%;margin:5px 0 0;accent-color:#efbd72}.wx select,.wx button{padding:7px;background:#29464a;color:#fff;border:1px solid #698181;border-radius:4px}.wx strong{float:right;color:#f2cc91;font-size:12px}
 
@@ -225,9 +225,9 @@ function cameras(){
  l=.58;
  const passing=sim.leg==='shoot'&&sim.gearTime<shootingTime*.77;
  if(passing){target[0]+=axes[2][0]*3.2;target[2]+=axes[2][2]*3.2;target[1]+=.85;}
- const distance=passing?Math.max(13,(span*.48+2.4)/(l*Math.min(1.8,innerWidth/innerHeight)))+3:Math.max(27,(span*.54+7)/(l*Math.min(1.8,innerWidth/innerHeight)))+7;
+ const distance=passing?Math.max(9,(span*.50+2.6)/(l*Math.min(1.8,innerWidth/innerHeight)))+1:Math.max(27,(span*.54+7)/(l*Math.min(1.8,innerWidth/innerHeight)))+7;
  eye=[target[0]+axes[2][0]*distance+axes[0][0]*5,target[1]+distance*(passing?.70:.27),target[2]+axes[2][2]*distance+axes[0][2]*5];
-  fw=unit(target.map((n,i)=>n-eye[i]));rt=unit(cross(fw,[0,1,0]));up=cross(rt,fw);}else if(view==='bag'||view==='aft'){const axes=vesselAxes();eye=view==='aft'?(isPaula()?aboard(2.1,10.25,16.72):aboard(0,5,0)):aboard(vessel.beam+10,isPaula()?12:8,14);const target=view==='aft'?aboard(0,2,60):aboard(vessel.beam+1,1,isPaula()?10:3);fw=unit(target.map((v,i)=>v-eye[i]));rt=unit(cross(fw,axes[1]));up=cross(rt,fw);l=.59;}else if(view==='bridge'){
+  fw=unit(target.map((n,i)=>n-eye[i]));rt=unit(cross(fw,[0,1,0]));up=cross(rt,fw);}else if(view==='bag'||view==='aft'){const axes=vesselAxes();eye=view==='aft'?(isPaula()?aboard(2.1,10.25,16.72):aboard(0,5,0)):aboard(vessel.beam+(isPaula()?10:6.4),isPaula()?12:7.1,isPaula()?14:10.7);const target=view==='aft'?aboard(0,2,60):aboard(vessel.beam+1,1,isPaula()?10:3);fw=unit(target.map((v,i)=>v-eye[i]));rt=unit(cross(fw,axes[1]));up=cross(rt,fw);l=.59;}else if(view==='bridge'){
    const axes=vesselAxes(),sn=Math.sin(sim.look),c=Math.cos(sim.look);
    eye=isPaula()?aboard(0,9.94,4.25,axes):aboard(-.25,4.48,-4.25,axes);
    fw=unit(axes[0].map((n,i)=>sn*n-c*axes[2][i]-(isPaula()?.09:.225)*axes[1][i]));
@@ -351,7 +351,7 @@ function bearingTo(target) {
 function shootOrHaul() {
   if (sim.leg === 'tow') {
     sim.leg = 'haul';
-    const sighting=Math.random();sim.haulVisitor=isPaula()&&sighting<.20?'orca':sighting<.55?'seal':'dolphin';sim.haulTime=0;sim.bagStart=sim.net;sim.transfer=false;sim.order=0;setView('stern');
+    const sighting=Math.random();sim.haulVisitor=isPaula()&&sighting<.20?'orca':sighting<.55?'seal':'dolphin';sim.haulTime=0;sim.liftTime=0;sim.liftBatch=0;sim.bagStart=sim.net;sim.transfer=false;sim.order=0;setView('stern');
     crewCall(isPaula()?'Winch engaged · hauling the gear':'Little Molly: closing in. Haul away.');
     return;
   }
@@ -398,6 +398,11 @@ function updateGear(dt) {
   }
 }
 function objective() {
+  if(sim.leg==='shoot'&&!isPaula()){
+   const p=sim.gearTime/shootingTime;
+   return ['02 / SENDING THE LINE',p<.15?'Get ready on the stern':p<.30?'Watch the throw':p<.55?'Little Molly pulls the end aboard':p<.77?'Over to the winch':'Pay out the net',
+    p<.30?'Follow the yellow knot from Rachel D to Little Molly.':p<.55?'The light line brings the heavy end across.':'The winch takes the weight.'];
+  }
   if(sim.leg==='shoot')return ['02 / SHOOTING','Paying out the net','Watch the floatline pay out astern.'];
   if (sim.phase === 5) return ['01 / DEPARTURE',isPaula()?'Cast off at Landing Pier':'Cast off at Town Pier','Press F to let go. Take the empty boat to the fishing ground shown on the chart.'];
   if (sim.phase === 1) return ['05 / LANDING','Connect the hose','Lines are fast. Press F to pump the hold into the tanker.'];
@@ -989,15 +994,23 @@ function pairHandover(m,axes,p,netEnd){
  const t=clamp((p-.15)/.15,0,1),pull=clamp((p-.30)/.25,0,1),take=clamp((p-.55)/.22,0,1);
  const tip=from.map((v,i)=>mix(mix(v,to[i],t),winch[i],take));
  tip[1]+=2.8*Math.sin(t*Math.PI);
- const split=pull;
- const point=f=>{const q=netEnd.map((n,j)=>mix(n,tip[j],f));q[1]-=(.25+.42*Math.sin(t*Math.PI))*(1-.55*take)*Math.sin(Math.PI*f);return q;};
- for(let i=0;i<24;i++){
-  const f=i/24,g=(i+1)/24;
-  // During the cast the light line pays out. The heavier end follows on the same path.
-  const heavy=g<=split;
-  m.tube(point(f),point(g),heavy?.071:.039,heavy?[148,112,72]:[225,199,140],5);
+ // The join between the warp and messenger starts at Rachel's hand.
+ // Follow one continuous line through that join to the flying knot.
+ const splice=from.map((v,i)=>mix(v,to[i],pull));
+ const sag=(a,b,f,drop)=>a.map((v,i)=>mix(v,b[i],f)-(i===1?drop*Math.sin(Math.PI*f):0));
+ function strand(a,b,radius,color,drop){
+  if(Math.hypot(...a.map((v,i)=>v-b[i]))<.015)return;
+  let previous=a;
+  for(let j=1;j<=16;j++){
+   const next=sag(a,b,j/16,drop);
+   m.tube(previous,next,radius,color,6);previous=next;
+  }
  }
- if(stage!=='winch')m.solid(tip,[.14,.14,.14],[226,185,113]);
+ const loadedEnd=splice.map((v,i)=>mix(v,winch[i],take));
+ strand(netEnd,loadedEnd,.085,[133,95,60],.35+.55*(1-pull));
+ strand(loadedEnd,tip,.048,[255,216,110],.52*Math.sin(Math.PI*t)+.35*(1-pull)*t);
+ if(p<.77)m.solid(loadedEnd,[.12,.12,.12],[209,125,65]);
+ if(stage!=='winch')m.solid(tip,[.19,.17,.19],[246,200,101]);
  const angle=Math.max(0,p-.55)*42;
  m.tube(onMolly(-.35,2.52,8.18),onMolly(.95,2.52,8.18),.36,[86,103,93],12);
  for(const x of [-.38,.97]){m.tube(onMolly(x,2.52,8.18),onMolly(x+.09,2.52,8.18),.49,[161,172,164],12);
@@ -1201,6 +1214,7 @@ function resumeVoyage(id){
  const rec=stored(boatKey()),o=rec?.state;
  if(!o||!Number.isFinite(o.x)||!Number.isFinite(o.z)||![0,1,2].includes(o.phase)||!['outbound','inbound','shoot','tow','haul'].includes(o.leg))return false;
  sim={...fresh(),...JSON.parse(JSON.stringify(o)),order:0,rud:0,omega:0,paused:false,fast:false,chart:false};if(rec.weather)Object.assign(weather,rec.weather);if(rec.settings&&Object.hasOwn(skyKinds,rec.settings.sky))Object.assign(settings,rec.settings);
+ if(!isPaula()&&sim.leg==='haul'&&sim.liftBatch==null)sim.liftTime=0; // Start legacy uncredited lifts at pickup.
  if(rec.armed)easyNetTrip=sim;harbourUpdate(0);hasContact=false;pending=0;syncWeather();clearElectronics();
  $('depthSelect').value=String(sim.towDepth||24);$('tankSelect').value=String(sim.tank||0);$('liftSize').value=String(sim.liftSize||2);
  setView(sim.view||'bridge');return true;
@@ -1372,8 +1386,14 @@ function fishTick(dt){
    slots[k]+=amount;
    if(slots[k]>=300-1e-6){sim.transfer=false;toast('Tank full · select another tank');}
   }else{
-   sim.liftTime=(sim.liftTime||0)+dt;
-   if(sim.liftTime>=5){callTone(490);amount=Math.min(sim.liftSize||2,sim.net);sim.liftTime=0;sim.lifts=(sim.lifts||0)+1;}
+   const before=sim.liftTime||0,after=Math.min(5,before+dt);
+   const poured=t=>clamp((t-3.1)/.75,0,1);
+   if(!sim.liftBatch)sim.liftBatch=Math.min(sim.liftSize||2,sim.net);
+   amount=Math.min(sim.net,sim.liftBatch*(poured(after)-poured(before)));
+   sim.liftTime=after;
+   if(after>=5||sim.net-amount<.000001){
+    callTone(490);sim.lifts=(sim.lifts||0)+1;sim.liftTime=0;sim.liftBatch=0;
+   }
   }
   sim.load+=amount;sim.net-=amount;
   if(sim.net<.000001){sim.net=0;sim.transfer=false;sim.bagStart=0;sim.leg=sim.load?'inbound':'outbound';sim.afterHaul=true;sim.recallMate=false;sim.partner=false;sim.order=0;setView('exterior');toast(sim.load>=HOLD_CAPACITY-.001?'Full load · steam home':'Gear aboard · fish again or steam home');}
@@ -1723,7 +1743,7 @@ function workingRig(){
  }
  
  if(sim.leg==='haul'&&sim.haulTime>=recoveryTime*.65){
-  const ratio=Math.sqrt(sim.net/Math.max(sim.bagStart||sim.net,.01)),r=(isPaula()?3.1:1.8)*(.38+.62*ratio);
+  const ratio=isPaula()?Math.sqrt(sim.net/Math.max(sim.bagStart||sim.net,.01)):Math.cbrt(clamp(sim.net/18,0,1)),r=(isPaula()?3.1:1.8)*(.38+.62*ratio);
   const alongside=clamp((sim.haulTime-recoveryTime*.65)/(recoveryTime*.35),0,1);
   // Recover over the stern, round the starboard quarter, then transfer alongside.
   const smooth=u=>{u=clamp(u,0,1);return u*u*(3-2*u);};
@@ -1776,7 +1796,7 @@ else if(sim.transfer){
  const t=clamp(sim.liftTime/5,0,1), smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
  const swing=smooth((t-.31)/.33)*(1-smooth((t-.81)/.19)),raise=smooth(t/.29)*(1-smooth((t-.72)/.28));
  const hold=aboard(1.6,2.8,1.7),rim=bag(0,.15+raise*4.8,0).map((n,i)=>mix(n,hold[i]+(i===1?1.1:0),swing));
- const full=clamp(sim.net/(sim.liftSize||2),0,1)*(1-smooth((t-.62)/.14)),depth=.48+.88*full;
+ const full=clamp((sim.liftBatch||Math.min(sim.net,sim.liftSize||2))/(sim.liftSize||2),0,1)*(1-clamp((t-.62)/.15,0,1)),depth=.48+.88*full;
  const tip=aboard(mix(vessel.beam+1,1.7,swing),7,2.5);m.tube(tip,rim,.035,[115,99,75]);
  const hoop=(j,f)=>{const a=j*Math.PI/8;return [rim[0]+.73*f*Math.cos(a),rim[1]-.42-(1-f)*depth,rim[2]+.73*f*Math.sin(a)];};
  for(let j=0;j<16;j++){
@@ -1790,7 +1810,16 @@ else if(sim.transfer){
    const tail=[at[0]+.17*Math.cos(a+.7),at[1]-.025,at[2]+.17*Math.sin(a+.7)];
    spratMesh(m,at,.34+.06*(j%3),a);
  }
- if(t>.62&&t<.77)for(let i=0;i<20;i++){const f=(i*.618+t*11)%1;m.solid([rim[0]+.24*Math.sin(i),rim[1]-.65-1.25*f,rim[2]+.25*Math.cos(i)],[.035,.035,.10],[197,205,196]);}
+ if(t>=.62&&t<.77){
+  const opening=clamp((t-.62)/.15,0,1);
+  for(let j=0;j<18;j++){
+   const fall=opening*2-j/17;
+   if(fall<0||fall>1)continue;
+   const fish=rim.map((v,i)=>mix(v,hold[i],fall));
+   fish[0]+=.22*Math.sin(j*2.4);fish[1]-=.46*(1-fall);
+   spratMesh(m,fish,.29+.045*(j%3),j*.92+fall);
+  }
+ }
 }
 
  }
@@ -2093,10 +2122,74 @@ function visitorConflict(x,z,a){
   if(Math.abs((x-ox)*nx+(z-oz)*nz)>radius+Math.abs(nx*Math.cos(b)+nz*Math.sin(b))*other.beam+Math.abs(-nx*Math.sin(b)+nz*Math.cos(b))*other.length+.35)return false;
  }return true;
 }
-function blocked(x,z,a){if(fleetConflict(x,z,a))return true;if(visitorConflict(x,z,a))return true;let c=Math.cos(a),s=Math.sin(a);
+// Counter-clockwise hull outline, scaled to the active vessel as in the shoreline checks.
+const contactHull=[[0,-10],[2.9,-6],[3.45,0],[2.65,9],[-2.65,9],[-3.45,0],[-2.9,-6]];
+
+function pierContact(x,z,yaw){
+ const reach=Math.hypot(vessel.beam,vessel.length)+.2;
+ let outline, deepest=null;
+ for(const [cx,cz,width,length,angle] of nav.piers){
+  const c=Math.cos(angle),s=Math.sin(angle),dx=x-cx,dz=z-cz;
+  const u=dx*c-dz*s,v=dx*s+dz*c,w=width/2+.18,l=length/2+.18;
+  if(Math.abs(u)>w+reach||Math.abs(v)>l+reach)continue;
+  if(!outline){
+   const ch=Math.cos(yaw),sh=Math.sin(yaw);
+   outline=contactHull.map(([a,b])=>{
+    const across=a*vessel.beam/3.45,along=b*vessel.length/10.6;
+    return [across*ch-along*sh,across*sh+along*ch];
+   });
+  }
+  const axes=[[c,-s],[s,c]];
+  for(let i=0;i<outline.length;i++){
+   const [a,b]=outline[i],[e,f]=outline[(i+1)%outline.length],len=Math.hypot(e-a,f-b);
+   axes.push([(b-f)/len,(e-a)/len]);
+  }
+  let depth=Infinity,nx=0,nz=0;
+  for(const [ax,az] of axes){
+   const radius=w*Math.abs(c*ax-s*az)+l*Math.abs(s*ax+c*az);
+   let low=Infinity,high=-Infinity;
+   for(const [hx,hz] of outline){
+    const d=(dx+hx)*ax+(dz+hz)*az;low=Math.min(low,d);high=Math.max(high,d);
+   }
+   const positive=radius-low,negative=radius+high,overlap=Math.min(positive,negative);
+   if(overlap<=0){depth=0;break;}
+   if(overlap<depth){depth=overlap;const sign=positive<negative?1:-1;nx=ax*sign;nz=az*sign;}
+  }
+  if(depth>0&&(!deepest||depth>deepest.depth))deepest={depth,nx,nz};
+ }
+ return deepest;
+}
+
+function moveHull(x,z,yaw,dt){
+ let hit=pierContact(x,z,yaw);
+ const forwardX=Math.sin(yaw),forwardZ=-Math.cos(yaw);
+ let vx=(x-sim.x)/dt,vz=(z-sim.z)/dt;
+ const touched=!!hit;
+ for(let pass=0;hit&&pass<6;pass++){
+  const {nx,nz,depth}=hit;
+  x+=nx*(depth+.002);z+=nz*(depth+.002);
+  const inward=vx*nx+vz*nz;
+  if(inward<0){
+   const rebound=Math.min(.38,-inward*.16);
+   vx+=(rebound-inward)*nx;vz+=(rebound-inward)*nz;
+  }
+  hit=pierContact(x,z,yaw);
+ }
+ if(hit)return; // Two tight faces can constrain a turn. Keep the last safe pose.
+ if(Math.abs(x)>15500||Math.abs(z)>14000||blocked(x,z,yaw,false)){
+  if(!hasContact&&Math.abs(sim.v)>.03)toast('Hull contact · select neutral, then back clear');
+  hasContact=true;sim.v=0;sim.sideSpeed=0;sim.omega=0;return;
+ }
+ if(touched){
+  sim.v=vx*forwardX+vz*forwardZ;
+  sim.sideSpeed=vx*Math.cos(yaw)+vz*Math.sin(yaw);
+ }
+ hasContact=false;sim.x=x;sim.z=z;sim.yaw=yaw;
+}
+function blocked(x,z,a,checkPiers=true){if(checkPiers&&pierContact(x,z,a))return true;if(fleetConflict(x,z,a))return true;if(visitorConflict(x,z,a))return true;let c=Math.cos(a),s=Math.sin(a);
  for(const [rawX,rawZ] of [[0,-10],[2.9,-6],[-2.9,-6],[3.45,0],[-3.45,0],[2.65,9],[-2.65,9]]){
  const dx=rawX*vessel.beam/3.45,dz=rawZ*vessel.length/10.6;let px=x+dx*c-dz*s,pz=z+dx*s+dz*c;
- for(const [bx,bz,w,l,ang] of nav.piers){let u=px-bx,v=pz-bz,ct=Math.cos(ang),st=Math.sin(ang);if(Math.abs(u*ct-v*st)<w*.5+.18&&Math.abs(u*st+v*ct)<l*.5+.18)return true;}
+
  if(px>-285&&px<30&&pz>-68&&pz<-15&&rockFeet40.some(r=>Math.abs(px-r.x)<6&&Math.abs(pz-r.z)<6&&pointIn(px,pz,r.p)))return true;
  for(const q of coasts)if(px>=q.x0&&px<=q.x1&&pz>=q.z0&&pz<=q.z1&&pointIn(px,pz,q.poly))return true;
  }return false;}
@@ -2132,7 +2225,7 @@ function physics(dt){if(littleMode&&foot.mode==='helm'){sim.order=isTied()?0:eas
  x+=Math.cos(yaw)*sim.sideSpeed*dt;z+=Math.sin(yaw)*sim.sideSpeed*dt;
  const gust=1+weather.force/12*(.17*seaSin(sim.t*.46)+.09*seaSin(sim.t*1.18));const drift=gust*weather.wind*.51444*(isPaula()?.018:.028)*(.24+.76*weather.open)*(1-.28*fraction);x+=drift*weather.dx*dt;z+=drift*weather.dz*dt;
  const assisted=safeDeparture(dt,turn);if(assisted)[x,z,yaw]=assisted;
- if(Math.abs(x)>15500||Math.abs(z)>14000||blocked(x,z,yaw)){if(!hasContact&&Math.abs(sim.v)>.03)toast('Hull contact · select neutral, then back clear');hasContact=true;sim.v=0;sim.omega=0;return;}hasContact=false;sim.x=x;sim.z=z;sim.yaw=yaw;
+ moveHull(x,z,yaw,dt);
 }
 function operate(){
  if(sim.phase===5||sim.phase===3){sim.orderLevel=nextOrderLevel();sim.orderCalled=false;sim.afterHaul=false;sim.sonarApproach=false;sim.phase=0;sim.tripId=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9);if(littleMode&&!isPaula())sim.departure=0;sim.lineOffAt=sim.t;sim.receiver=0;sim.discharged=0;sim.receiverChanges=0;sim.tanks=[0,0,0,0];sim.lifts=0;sim.leg='outbound';sim.marked=false;sim.ticketMade=false;sim.landingPhoto='';sim.dolphinPhoto='';saveVoyage();toast('Lines released · fishing ground marked on chart');return;}
